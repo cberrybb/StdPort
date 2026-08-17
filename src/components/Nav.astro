@@ -6,7 +6,6 @@ const textLinks: { label: string; href: string }[] = [
 	{ label: 'Contact Me', href: '/contact/' },
 ];
 
-/** Test if a link is pointing to the current page. */
 const isCurrentPage = (href: string) => {
 	let pathname = Astro.url.pathname.replace(import.meta.env.BASE_URL, '');
 	if (pathname.at(0) !== '/') pathname = '/' + pathname;
@@ -17,11 +16,22 @@ const isCurrentPage = (href: string) => {
 
 <nav>
 	<div class="menu-header">
-		<a href="/" class="site-title">
-			<Icon icon="terminal-window" color="var(--accent-regular)" size="1.6em" gradient />
-			Paige Berry
-		
+		<a href="/" class="site-logo" aria-label="Paige Berry home">
+			<span class="print-stage" aria-hidden="true">
+
+				<!-- Positive impression -->
+				<span class="impression">
+					<img src="/assets/PBLogo.jpg" alt="" />
+				</span>
+
+				<!-- Moving printing block -->
+				<span class="type-block">
+					<img src="/assets/PBLogo.jpg" alt="" />
+				</span>
+
+			</span>
 		</a>
+
 		<menu-button>
 			<template>
 				<button class="menu-button" aria-expanded="false">
@@ -31,12 +41,17 @@ const isCurrentPage = (href: string) => {
 			</template>
 		</menu-button>
 	</div>
+
 	<noscript>
 		<ul class="nav-items">
 			{
 				textLinks.map(({ label, href }) => (
 					<li>
-						<a aria-current={isCurrentPage(href) ? 'page' : null} class="link" href={href}>
+						<a
+							aria-current={isCurrentPage(href) ? 'page' : null}
+							class="link"
+							href={href}
+						>
 							{label}
 						</a>
 					</li>
@@ -44,12 +59,17 @@ const isCurrentPage = (href: string) => {
 			}
 		</ul>
 	</noscript>
+
 	<div id="menu-content" hidden>
 		<ul class="nav-items">
 			{
 				textLinks.map(({ label, href }) => (
 					<li>
-						<a aria-current={isCurrentPage(href) ? 'page' : null} class="link" href={href}>
+						<a
+							aria-current={isCurrentPage(href) ? 'page' : null}
+							class="link"
+							href={href}
+						>
 							{label}
 						</a>
 					</li>
@@ -64,35 +84,39 @@ const isCurrentPage = (href: string) => {
 		constructor() {
 			super();
 
-			// Inject menu toggle button when JS runs.
-			this.appendChild(this.querySelector('template')!.content.cloneNode(true));
-			const btn = this.querySelector('button')!;
+			this.appendChild(
+				this.querySelector('template')!.content.cloneNode(true)
+			);
 
-			// Hide menu (shown by default to support no-JS browsers).
+			const btn = this.querySelector('button')!;
 			const menu = document.getElementById('menu-content')!;
+
 			menu.hidden = true;
-			// Add "menu-content" class in JS to avoid covering content in non-JS browsers.
 			menu.classList.add('menu-content');
 
-			/** Set whether the menu is currently expanded or collapsed. */
 			const setExpanded = (expand: boolean) => {
 				btn.setAttribute('aria-expanded', expand ? 'true' : 'false');
 				menu.hidden = !expand;
 			};
 
-			// Toggle menu visibility when the menu button is clicked.
-			btn.addEventListener('click', () => setExpanded(menu.hidden === true));
+			btn.addEventListener('click', () => {
+				setExpanded(menu.hidden === true);
+			});
 
-			// Hide menu button for large screens.
-			const handleViewports = (e: MediaQueryList | MediaQueryListEvent) => {
+			const handleViewports = (
+				e: MediaQueryList | MediaQueryListEvent
+			) => {
 				setExpanded(e.matches);
 				btn.hidden = e.matches;
 			};
+
 			const mediaQueries = window.matchMedia('(min-width: 50em)');
+
 			handleViewports(mediaQueries);
 			mediaQueries.addEventListener('change', handleViewports);
 		}
 	}
+
 	customElements.define('menu-button', MenuButton);
 </script>
 
@@ -108,18 +132,202 @@ const isCurrentPage = (href: string) => {
 	.menu-header {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
 		gap: 0.5rem;
 		padding: 1.5rem;
 	}
 
-	.site-title {
-		display: flex;
-		gap: 0.5rem;
+	/* =========================================
+	   PB BLOCK PRINT
+	   ========================================= */
+
+	.site-logo {
+		display: inline-flex;
 		align-items: center;
-		line-height: 1.1;
-		color: var(--gray-0);
 		text-decoration: none;
 	}
+
+	.print-stage {
+		position: relative;
+		display: block;
+		width: 5.7rem;
+		height: 2.5rem;
+	}
+
+	.type-block,
+	.impression {
+		position: absolute;
+		top: 0;
+		width: 2.5rem;
+		height: 2.5rem;
+	}
+
+	.type-block {
+		left: 0;
+		z-index: 2;
+		transform-origin: center;
+	}
+
+	/* Original positive print appears here */
+	.impression {
+		left: 3.1rem;
+		z-index: 1;
+		opacity: 0;
+	}
+
+	.type-block img,
+	.impression img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	/*
+		SEQUENCE
+
+		1. Original block slides right
+		2. Block reaches print position
+		3. Positive impression appears
+		4. Block withdraws left
+		5. While withdrawing it flips through its edge
+		6. Reverse face becomes mirrored + inverted
+		7. Reverse block arrives back on left
+	*/
+
+	.site-logo:hover .type-block,
+	.site-logo:focus-visible .type-block {
+		animation: block-print 2.1s ease-in-out forwards;
+	}
+
+	.site-logo:hover .impression,
+	.site-logo:focus-visible .impression {
+		animation: impression-print 2.1s ease-out forwards;
+	}
+
+	/* ---------- BLOCK ---------- */
+
+	@keyframes block-print {
+
+		/* Original block */
+		0% {
+			transform:
+				translateX(0)
+				scaleX(1);
+
+			filter: none;
+		}
+
+		/* Slide right */
+		35% {
+			transform:
+				translateX(1.6rem)
+				scaleX(1);
+
+			filter: none;
+		}
+
+		/* Reach print position */
+		55% {
+			transform:
+				translateX(3.1rem)
+				scaleX(1);
+
+			filter: none;
+		}
+
+		/* Brief contact */
+		62% {
+			transform:
+				translateX(3.1rem)
+				scaleX(1);
+
+			filter: none;
+		}
+
+		/*
+			Withdraw and begin flipping.
+			The print is now being revealed.
+		*/
+		72% {
+			transform:
+				translateX(2.2rem)
+				scaleX(0.45);
+
+			filter: none;
+		}
+
+		/* Almost edge-on */
+		78% {
+			transform:
+				translateX(1.6rem)
+				scaleX(0.04);
+
+			filter: none;
+		}
+
+		/*
+			Cross the edge.
+			Reverse face becomes inverted here.
+		*/
+		79% {
+			transform:
+				translateX(1.5rem)
+				scaleX(-0.04);
+
+			filter: invert(1);
+		}
+
+		/* Mirrored reverse face opens */
+		88% {
+			transform:
+				translateX(0.7rem)
+				scaleX(-0.65);
+
+			filter: invert(1);
+		}
+
+		/*
+			Final state:
+			mirrored + inverted block on left.
+		*/
+		100% {
+			transform:
+				translateX(0)
+				scaleX(-1);
+
+			filter: invert(1);
+		}
+	}
+
+	/* ---------- PRINT ---------- */
+
+	@keyframes impression-print {
+
+		0%,
+		57% {
+			opacity: 0;
+		}
+
+		/* Block begins lifting away */
+		63% {
+			opacity: 0.25;
+		}
+
+		/* Print is revealed */
+		70% {
+			opacity: 1;
+		}
+
+		/* Positive print remains */
+		100% {
+			opacity: 1;
+		}
+	}
+
+	/* =========================================
+	   MENU
+	   ========================================= */
 
 	.menu-button {
 		position: relative;
@@ -180,6 +388,10 @@ const isCurrentPage = (href: string) => {
 		color: var(--gray-0);
 	}
 
+	/* =========================================
+	   DESKTOP
+	   ========================================= */
+
 	@media (min-width: 50em) {
 		nav {
 			display: grid;
@@ -191,10 +403,6 @@ const isCurrentPage = (href: string) => {
 
 		.menu-header {
 			padding: 0;
-		}
-
-		.site-title {
-			font-size: var(--text-lg);
 		}
 
 		.menu-content {
@@ -239,29 +447,19 @@ const isCurrentPage = (href: string) => {
 			color: var(--gray-999);
 			background-color: var(--gray-700);
 		}
+	}
 
-		.menu-footer {
-			--icon-padding: 0.375rem;
+	/* ---------- ACCESSIBILITY ---------- */
 
-			justify-self: flex-end;
-			align-items: center;
-			padding: 0;
-			background-color: transparent;
-			box-shadow: none;
-		}
-
-		.socials {
-			display: none;
+	@media (prefers-reduced-motion: reduce) {
+		.site-logo:hover .type-block,
+		.site-logo:hover .impression,
+		.site-logo:focus-visible .type-block,
+		.site-logo:focus-visible .impression {
+			animation: none;
 		}
 	}
 
-	@media (min-width: 60em) {
-		.socials {
-			display: flex;
-			justify-content: flex-end;
-			gap: 0;
-		}
-	}
 	@media (forced-colors: active) {
 		.link[aria-current='page'] {
 			color: SelectedItem;
