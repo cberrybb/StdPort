@@ -1,0 +1,247 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+import stock1 from '../assets/stock-1.jpg';
+import stock2 from '../assets/stock-2.jpg';
+import stock3 from '../assets/stock-3.jpg';
+import stock4 from '../assets/stock-4.jpg';
+
+interface Props {
+	project: CollectionEntry<'work'>;
+}
+
+const { project } = Astro.props;
+
+const assetMap = {
+	'/assets/stock-1.jpg': stock1,
+	'/assets/stock-2.jpg': stock2,
+	'/assets/stock-3.jpg': stock3,
+	'/assets/stock-4.jpg': stock4,
+};
+
+const resolveAsset = (src: string) => assetMap[src as keyof typeof assetMap] ?? src;
+
+const galleryGroups = [
+	{ key: 'outcomes', label: 'Outcomes', items: project.data.outcomes ?? [project.data.heroImage ?? project.data.cardImage] },
+	{ key: 'development', label: 'Development', items: project.data.development ?? [project.data.cardImage] },
+	{ key: 'process', label: 'Process', items: project.data.process ?? [project.data.cardImage] },
+];
+---
+
+<div class="project-explorer">
+	<div class="tabs" role="tablist" aria-label="Project exploration tabs">
+		{galleryGroups.map(({ key, label }) => (
+			<button
+				type="button"
+				role="tab"
+				aria-selected={key === 'outcomes' ? 'true' : 'false'}
+				data-tab-button={key}
+				class:list={[`tab-button`, { active: key === 'outcomes' }]}
+			>
+				{label}
+			</button>
+		))}
+	</div>
+
+	{galleryGroups.map(({ key, label, items }) => (
+		<section
+			class="gallery-panel"
+			role="tabpanel"
+			aria-label={`${label} gallery`}
+			data-tab-panel={key}
+			hidden={key !== 'outcomes'}
+		>
+			{items.length > 0 ? (
+				<div class="gallery-layout">
+					<div class="thumbs" aria-label={`${label} thumbnails`}>
+						{items.map((image, index) => (
+							<button
+								type="button"
+								class:list={['thumb', { selected: index === 0 && key === 'outcomes' }]}
+								data-panel={key}
+								data-full={image}
+								data-alt={`${project.data.title} ${label} ${index + 1}`}
+								aria-label={`View ${label} image ${index + 1}`}
+								aria-pressed={index === 0 && key === 'outcomes' ? 'true' : 'false'}
+							>
+								<Image
+									src={resolveAsset(image)}
+									alt=""
+									width={180}
+									height={120}
+									sizes="(max-width: 50em) 24vw, 180px"
+									loading="lazy"
+								/>
+							</button>
+						))}
+					</div>
+
+					<figure class="viewer">
+						<img
+							data-viewer={key}
+							src={items[0]}
+							alt={`${project.data.title} ${label}`}
+							loading="lazy"
+						/>
+					</figure>
+				</div>
+			) : (
+				<p class="empty">No images available yet.</p>
+			)}
+		</section>
+	))}
+</div>
+
+<script>
+	const tabs = document.querySelectorAll('[data-tab-button]');
+	const panels = document.querySelectorAll('[data-tab-panel]');
+
+	const setActiveTab = (targetKey) => {
+		tabs.forEach((tab) => {
+			const isActive = tab.dataset.tabButton === targetKey;
+			tab.setAttribute('aria-selected', String(isActive));
+			tab.classList.toggle('active', isActive);
+		});
+
+		panels.forEach((panel) => {
+			const isActive = panel.dataset.tabPanel === targetKey;
+			panel.hidden = !isActive;
+		});
+	};
+
+	tabs.forEach((tab) => {
+		tab.addEventListener('click', () => setActiveTab(tab.dataset.tabButton));
+	});
+
+	panels.forEach((panel) => {
+		const thumbs = panel.querySelectorAll('[data-full]');
+		const viewer = panel.querySelector('[data-viewer]');
+
+		thumbs.forEach((thumb) => {
+			thumb.addEventListener('click', () => {
+				const nextSrc = thumb.dataset.full;
+				const nextAlt = thumb.dataset.alt || viewer?.getAttribute('alt') || '';
+				if (viewer && nextSrc) {
+					viewer.setAttribute('src', nextSrc);
+					viewer.setAttribute('alt', nextAlt);
+				}
+
+				thumbs.forEach((item) => item.setAttribute('aria-pressed', String(item === thumb)));
+				thumbs.forEach((item) => item.classList.toggle('selected', item === thumb));
+			});
+		});
+	});
+</script>
+
+<style>
+	.project-explorer {
+		display: grid;
+		gap: 1.5rem;
+	}
+
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.tab-button {
+		appearance: none;
+		border: 1px solid var(--gray-800);
+		background: transparent;
+		border-radius: 999rem;
+		padding: 0.7rem 1.1rem;
+		font: inherit;
+		font-weight: 600;
+		color: var(--gray-400);
+		cursor: pointer;
+		transition: background-color var(--theme-transition), color var(--theme-transition), border-color var(--theme-transition);
+	}
+
+	.tab-button.active,
+	.tab-button[aria-selected='true'] {
+		background: var(--gray-700);
+		border-color: var(--gray-700);
+		color: var(--gray-999);
+	}
+
+	.gallery-panel {
+		transition: opacity 220ms ease;
+	}
+
+	.gallery-layout {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.thumbs {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.thumb {
+		padding: 0;
+		border: 1px solid var(--gray-800);
+		border-radius: 0.9rem;
+		overflow: hidden;
+		background: var(--gray-999);
+		cursor: pointer;
+		transition: border-color var(--theme-transition), transform var(--theme-transition);
+	}
+
+	.thumb img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.thumb.selected,
+	.thumb[aria-pressed='true'] {
+		border-color: var(--gray-0);
+	}
+
+	.viewer {
+		margin: 0;
+		border-radius: 1.25rem;
+		overflow: hidden;
+		background: var(--gray-50);
+		border: 1px solid var(--gray-800);
+	}
+
+	.viewer img {
+		display: block;
+		width: 100%;
+		height: min(70vh, 48rem);
+		object-fit: cover;
+		background: var(--gray-50);
+	}
+
+	.empty {
+		padding: 1.5rem;
+		border: 1px dashed var(--gray-800);
+		border-radius: 1rem;
+		color: var(--gray-400);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.gallery-panel,
+		.tab-button,
+		.thumb {
+			transition: none;
+		}
+	}
+
+	@media (min-width: 50em) {
+		.gallery-layout {
+			grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.thumbs {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

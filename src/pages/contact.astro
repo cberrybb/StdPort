@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+---
+
+<BaseLayout title="Contact Me | Leah Moore" description="Contact Leah Moore for design, creative, and student collaborations.">
+	<div class="wrapper contact-shell">
+		<Hero
+			title="Contact Me"
+			tagline="I’m available for student projects, brand collaborations, and thoughtful digital work."
+			align="start"
+		/>
+
+		<section class="contact-card" aria-label="Contact details">
+			<div>
+				<p class="label">Email</p>
+				<a href="mailto:hello@leahmoore.studio">hello@leahmoore.studio</a>
+			</div>
+			<div>
+				<p class="label">Instagram</p>
+				<a href="https://instagram.com/" target="_blank" rel="noreferrer">@leahmoore.studio</a>
+			</div>
+			<div>
+				<p class="label">LinkedIn</p>
+				<a href="https://www.linkedin.com/" target="_blank" rel="noreferrer">linkedin.com/in/leahmoore</a>
+			</div>
+			<div>
+				<p class="label">CV</p>
+				<a href="/assets/portfolio-cv.pdf">Download CV</a>
+			</div>
+		</section>
+	</div>
+</BaseLayout>
+
+<style>
+	.contact-shell {
+		display: grid;
+		gap: 2rem;
+		padding-block: 2rem 5rem;
+	}
+
+	.contact-card {
+		display: grid;
+		gap: 1.5rem;
+		padding: 2rem;
+		border: 1px solid var(--gray-800);
+		border-radius: 1.5rem;
+		background: var(--gray-999);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.label {
+		margin: 0 0 0.4rem;
+		font-size: var(--text-sm);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--gray-400);
+	}
+
+	.contact-card a {
+		font-size: var(--text-lg);
+		color: var(--gray-0);
+		text-decoration: none;
+	}
+
+	@media (min-width: 50em) {
+		.contact-card {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			padding: 3rem;
+		}
+	}
+</style>
