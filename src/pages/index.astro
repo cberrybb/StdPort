@@ -13,19 +13,22 @@ const projects = (await getCollection('work')).sort((a, b) => {
 });
 ---
 
-<BaseLayout title="Leah Moore | Portfolio" description="Student designer portfolio featuring recent work across identity, digital design, and art direction.">
+<BaseLayout
+	title="Paige Berry | Portfolio"
+	description="Student designer portfolio featuring recent work across identity, digital design, and art direction."
+>
 	<div class="page-shell stack gap-20">
 		<main class="wrapper stack gap-8">
-			<Hero
-				title="Leah Moore"
-				tagline="Designer and visual storyteller creating clear, considered work across digital, brand, and editorial systems."
-				align="start"
-			/>
 
-			<section class="intro-grid">
-				<p>Currently studying design with a focus on systems, storytelling, and tactile digital experiences.</p>
-				<a href="/contact/">Contact Me</a>
-			</section>
+			<!-- Hero and introduction sit side-by-side on desktop -->
+			<div class="hero-row">
+				<Hero
+					title="Paige Berry"
+					tagline="Designer and visual storyteller creating clear, considered work across digital, brand, and editorial systems."
+					align="start"
+				/>
+
+			</div>
 
 			<section aria-label="Portfolio projects">
 				<Grid variant="offset">
@@ -36,6 +39,7 @@ const projects = (await getCollection('work')).sort((a, b) => {
 					))}
 				</Grid>
 			</section>
+
 		</main>
 	</div>
 </BaseLayout>
@@ -43,6 +47,12 @@ const projects = (await getCollection('work')).sort((a, b) => {
 <style>
 	.page-shell {
 		padding-block: 1rem 4rem;
+	}
+
+	/* Hero and contact introduction layout */
+	.hero-row {
+		display: grid;
+		gap: 2rem;
 	}
 
 	.intro-grid {
@@ -70,7 +80,14 @@ const projects = (await getCollection('work')).sort((a, b) => {
 		text-decoration: none;
 	}
 
+	/* Side-by-side hero layout on larger screens */
 	@media (min-width: 50em) {
+		.hero-row {
+			grid-template-columns: minmax(0, 1fr) minmax(28rem, 1fr);
+			align-items: end;
+			gap: 4rem;
+		}
+
 		.intro-grid {
 			grid-template-columns: minmax(0, 1fr) auto;
 		}
