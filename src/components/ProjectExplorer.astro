@@ -94,10 +94,10 @@ const galleryGroups = [
 </div>
 
 <script>
-	const tabs = document.querySelectorAll('[data-tab-button]');
-	const panels = document.querySelectorAll('[data-tab-panel]');
+	const tabs = document.querySelectorAll<HTMLButtonElement>('[data-tab-button]');
+	const panels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
 
-	const setActiveTab = (targetKey) => {
+	const setActiveTab = (targetKey: string) => {
 		tabs.forEach((tab) => {
 			const isActive = tab.dataset.tabButton === targetKey;
 			tab.setAttribute('aria-selected', String(isActive));
@@ -111,24 +111,32 @@ const galleryGroups = [
 	};
 
 	tabs.forEach((tab) => {
-		tab.addEventListener('click', () => setActiveTab(tab.dataset.tabButton));
+		tab.addEventListener('click', () => {
+			const targetKey = tab.dataset.tabButton;
+			if (targetKey) setActiveTab(targetKey);
+		});
 	});
 
 	panels.forEach((panel) => {
-		const thumbs = panel.querySelectorAll('[data-full]');
-		const viewer = panel.querySelector('[data-viewer]');
+		const thumbs = panel.querySelectorAll<HTMLButtonElement>('[data-full]');
+		const viewer = panel.querySelector<HTMLImageElement>('[data-viewer]');
 
 		thumbs.forEach((thumb) => {
 			thumb.addEventListener('click', () => {
 				const nextSrc = thumb.dataset.full;
 				const nextAlt = thumb.dataset.alt || viewer?.getAttribute('alt') || '';
+
 				if (viewer && nextSrc) {
 					viewer.setAttribute('src', nextSrc);
 					viewer.setAttribute('alt', nextAlt);
 				}
 
-				thumbs.forEach((item) => item.setAttribute('aria-pressed', String(item === thumb)));
-				thumbs.forEach((item) => item.classList.toggle('selected', item === thumb));
+				thumbs.forEach((item) =>
+					item.setAttribute('aria-pressed', String(item === thumb))
+				);
+				thumbs.forEach((item) =>
+					item.classList.toggle('selected', item === thumb)
+				);
 			});
 		});
 	});
