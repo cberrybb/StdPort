@@ -1,5 +1,5 @@
 ---
-import { type CollectionEntry, getCollection } from 'astro:content';
+import { type CollectionEntry, getCollection, render } from 'astro:content';
 
 import ProjectExplorer from '../../components/ProjectExplorer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -10,6 +10,7 @@ interface Props {
 
 export async function getStaticPaths() {
 	const work = await getCollection('work');
+
 	return work.map((entry) => ({
 		params: { slug: entry.data.slug ?? entry.id },
 		props: { entry },
@@ -17,30 +18,50 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
+
 const slug = entry.data.slug ?? entry.id;
 const heroImage = entry.data.heroImage || entry.data.img || '/assets/stock-1.jpg';
 const projectCategory = entry.data.category || entry.data.tags[0] || 'Design';
+
+const { Content } = await render(entry);
 ---
 
 <BaseLayout title={`${entry.data.title} | Paige Berry`} description={entry.data.description}>
 	<div class="project-page wrapper">
+
 		<header class="intro-header">
 			<a class="back-link" href="/">← Home</a>
+
 			<div class="meta-block">
 				<p class="eyebrow">{projectCategory}</p>
+
 				<h1>{entry.data.title}</h1>
+
 				<p class="context">{entry.data.description}</p>
+
 				<div class="meta-row">
 					{entry.data.year && <span>{entry.data.year}</span>}
-					{entry.data.tags?.length > 0 && <span>{entry.data.tags.join(' / ')}</span>}
+					{entry.data.tags?.length > 0 && (
+						<span>{entry.data.tags.join(' / ')}</span>
+					)}
 				</div>
 			</div>
 		</header>
 
 		<main class="project-main">
-			<img class="hero-image" src={heroImage} alt={entry.data.img_alt || entry.data.title} />
+			<img
+				class="hero-image"
+				src={heroImage}
+				alt={entry.data.img_alt || entry.data.title}
+			/>
+
 			<ProjectExplorer project={entry} />
+
+			<div class="project-content">
+				<Content />
+			</div>
 		</main>
+
 	</div>
 </BaseLayout>
 
@@ -81,6 +102,7 @@ const projectCategory = entry.data.category || entry.data.tags[0] || 'Design';
 		line-height: 0.95;
 		letter-spacing: -0.05em;
 		margin: 0;
+		color: #8a8a8a;
 	}
 
 	.context {
@@ -115,6 +137,23 @@ const projectCategory = entry.data.category || entry.data.tags[0] || 'Design';
 		box-shadow: var(--shadow-md);
 		background: var(--gray-50);
 	}
+
+.project-content {
+	max-width: 58rem;
+	color: #727272;
+}
+
+.project-content :global(p),
+.project-content :global(li),
+.project-content :global(blockquote) {
+	color: #727272;
+}
+
+.project-content :global(h2),
+.project-content :global(h3),
+.project-content :global(h4) {
+	color: #8a8a8a;
+}
 
 	@media (min-width: 50em) {
 		.project-page {
