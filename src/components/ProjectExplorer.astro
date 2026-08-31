@@ -1,11 +1,5 @@
 ---
-import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
-
-import stock1 from '../assets/stock-1.jpg';
-import stock2 from '../assets/stock-2.jpg';
-import stock3 from '../assets/stock-3.jpg';
-import stock4 from '../assets/stock-4.jpg';
 
 interface Props {
 	project: CollectionEntry<'work'>;
@@ -13,139 +7,344 @@ interface Props {
 
 const { project } = Astro.props;
 
-const assetMap = {
-	'/assets/stock-1.jpg': stock1,
-	'/assets/stock-2.jpg': stock2,
-	'/assets/stock-3.jpg': stock3,
-	'/assets/stock-4.jpg': stock4,
-};
+const sourceFile = project.filePath?.replace(/\\/g, '/');
+const projectDir = sourceFile?.slice(0, sourceFile.lastIndexOf('/')) ?? '';
 
-const resolveAsset = (src: string) => assetMap[src as keyof typeof assetMap] ?? src;
+const allProjectImages = import.meta.glob(
+	[
+		'/src/content/work/**/*.png',
+		'/src/content/work/**/*.jpg',
+		'/src/content/work/**/*.jpeg',
+		'/src/content/work/**/*.webp',
+		'/src/content/work/**/*.gif',
+		'/src/content/work/**/*.avif',
+	],
+	{
+		eager: true,
+		query: '?url',
+		import: 'default',
+	},
+) as Record<string, string>;
 
-const galleryGroups = [
-	{ key: 'outcomes', label: 'Outcomes', items: project.data.outcomes ?? [project.data.heroImage ?? project.data.cardImage] },
-	{ key: 'development', label: 'Development', items: project.data.development ?? [project.data.cardImage] },
-	{ key: 'process', label: 'Process', items: project.data.process ?? [project.data.cardImage] },
-];
+const galleryDefinition = project.data.gallery ?? {};
+
+const escapeRegExp = (value: string) =>
+	value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const galleryGroups = Object.entries(galleryDefinition).map(([key, label]) => {
+	const filePattern = new RegExp(
+		`^${escapeRegExp(key)}(\\d+)(T?)\\.(png|jpe?g|webp|gif|avif)$`,
+		'i',
+	);
+
+	const folderPrefix = projectDir ? `/${projectDir}/` : '';
+
+	const discovered = Object.entries(allProjectImages)
+		.map(([path, url]) => {
+			if (!folderPrefix || !path.startsWith(folderPrefix)) return null;
+
+			const fileName = path.slice(folderPrefix.length);
+
+			if (fileName.includes('/')) return null;
+
+			const match = fileName.match(filePattern);
+			if (!match) return null;
+
+			return {
+				url,
+				order: Number(match[1]),
+				isTile: match[2].toLowerCase() === 't',
+				fileName,
+			};
+		})
+		.filter(
+			(item): item is {
+				url: string;
+				order: number;
+				isTile: boolean;
+				fileName: string;
+			} => item !== null,
+		);
+
+	const byOrder = new Map<
+		number,
+		{ url?: string; tileUrl?: string; fileName?: string }
+	>();
+
+	discovered.forEach((item) => {
+		const current = byOrder.get(item.order) ?? {};
+
+		if (item.isTile) {
+			current.tileUrl = item.url;
+		} else {
+			current.url = item.url;
+			current.fileName = item.fileName;
+		}
+
+		byOrder.set(item.order, current);
+	});
+
+	const items = Array.from(byOrder.entries())
+		.filter(([, item]) => Boolean(item.url))
+		.sort(([a], [b]) => a - b)
+		.map(([order, item]) => ({
+			url: item.url as string,
+			tileUrl: item.tileUrl,
+			order,
+		}));
+
+	return {
+		key,
+		label,
+		items,
+	};
+});
+
+const firstGroupKey = galleryGroups[0]?.key ?? '';
 ---
 
-<div class="project-explorer">
-	<div class="tabs" role="tablist" aria-label="Project exploration tabs">
-		{galleryGroups.map(({ key, label }) => (
-			<button
-				type="button"
-				role="tab"
-				aria-selected={key === 'outcomes' ? 'true' : 'false'}
-				data-tab-button={key}
-				class:list={[`tab-button`, { active: key === 'outcomes' }]}
-			>
-				{label}
-			</button>
-		))}
-	</div>
+{
+	galleryGroups.length > 0 && (
+		<div class="project-explorer" data-gallery-source>
+			<div class="tabs" role="tablist" aria-label="Project exploration tabs">
+				{galleryGroups.map(({ key, label }) => {
+					const isFirst = key === firstGroupKey;
 
-	{galleryGroups.map(({ key, label, items }) => (
-		<section
-			class="gallery-panel"
-			role="tabpanel"
-			aria-label={`${label} gallery`}
-			data-tab-panel={key}
-			hidden={key !== 'outcomes'}
-		>
-			{items.length > 0 ? (
-				<div class="gallery-layout">
-					<div class="thumbs" aria-label={`${label} thumbnails`}>
-						{items.map((image, index) => (
-							<button
-								type="button"
-								class:list={['thumb', { selected: index === 0 && key === 'outcomes' }]}
-								data-panel={key}
-								data-full={image}
-								data-alt={`${project.data.title} ${label} ${index + 1}`}
-								aria-label={`View ${label} image ${index + 1}`}
-								aria-pressed={index === 0 && key === 'outcomes' ? 'true' : 'false'}
-							>
-								<Image
-									src={resolveAsset(image)}
-									alt=""
-									width={180}
-									height={120}
-									sizes="(max-width: 50em) 24vw, 180px"
-									loading="lazy"
-								/>
-							</button>
-						))}
-					</div>
+					return (
+						<button
+							type="button"
+							role="tab"
+							aria-selected={isFirst ? 'true' : 'false'}
+							data-tab-button={key}
+							class:list={['tab-button', { active: isFirst }]}
+						>
+							{label}
+						</button>
+					);
+				})}
+			</div>
 
-					<figure class="viewer">
-						<img
-							data-viewer={key}
-							src={items[0]}
-							alt={`${project.data.title} ${label}`}
-							loading="lazy"
-						/>
-					</figure>
-				</div>
-			) : (
-				<p class="empty">No images available yet.</p>
-			)}
-		</section>
-	))}
-</div>
+			{galleryGroups.map(({ key, label, items }) => {
+				const isFirst = key === firstGroupKey;
+
+				return (
+					<section
+						class="gallery-panel"
+						role="tabpanel"
+						aria-label={`${label} gallery`}
+						data-tab-panel={key}
+						hidden={!isFirst}
+					>
+						{items.length > 0 ? (
+							<div class="gallery-layout">
+								<div class="thumbs" aria-label={`${label} thumbnails`}>
+									{items.map((image, index) => (
+										<button
+											type="button"
+											class:list={[
+												'thumb',
+												{ selected: index === 0 && isFirst },
+											]}
+											data-panel={key}
+											data-full={image.url}
+											data-tile={image.tileUrl}
+											data-alt={`${project.data.title} ${label} ${index + 1}`}
+											aria-label={`View ${label} image ${index + 1}`}
+											aria-pressed={
+												index === 0 && isFirst ? 'true' : 'false'
+											}
+										>
+											<img
+												src={image.url}
+												alt=""
+												width="180"
+												height="120"
+												loading="lazy"
+											/>
+										</button>
+									))}
+								</div>
+
+								<figure class="viewer">
+									<img
+										data-viewer={key}
+										src={items[0].url}
+										alt={`${project.data.title} ${label}`}
+										loading="lazy"
+									/>
+								</figure>
+							</div>
+						) : (
+							<p class="empty">No images available yet.</p>
+						)}
+					</section>
+				);
+			})}
+		</div>
+	)
+}
 
 <script>
-	const tabs = document.querySelectorAll<HTMLButtonElement>('[data-tab-button]');
-	const panels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
+	const gallerySource = document.querySelector<HTMLElement>(
+		'.project-explorer[data-gallery-source]',
+	);
 
-	const setActiveTab = (targetKey: string) => {
+	const initialiseGallery = (gallery: HTMLElement) => {
+		const tabs = gallery.querySelectorAll<HTMLButtonElement>('[data-tab-button]');
+		const panels = gallery.querySelectorAll<HTMLElement>('[data-tab-panel]');
+		const firstTab = tabs[0];
+		const firstKey = firstTab?.dataset.tabButton ?? '';
+
+		const setActiveTab = (targetKey: string) => {
+			tabs.forEach((tab) => {
+				const isActive = tab.dataset.tabButton === targetKey;
+				tab.setAttribute('aria-selected', String(isActive));
+				tab.classList.toggle('active', isActive);
+			});
+
+			panels.forEach((panel) => {
+				panel.hidden = panel.dataset.tabPanel !== targetKey;
+			});
+		};
+
+		if (firstKey) setActiveTab(firstKey);
+
 		tabs.forEach((tab) => {
-			const isActive = tab.dataset.tabButton === targetKey;
-			tab.setAttribute('aria-selected', String(isActive));
-			tab.classList.toggle('active', isActive);
+			tab.addEventListener('click', () => {
+				const targetKey = tab.dataset.tabButton;
+				if (targetKey) setActiveTab(targetKey);
+			});
 		});
 
 		panels.forEach((panel) => {
-			const isActive = panel.dataset.tabPanel === targetKey;
-			panel.hidden = !isActive;
+			const thumbs = panel.querySelectorAll<HTMLButtonElement>('[data-full]');
+			const viewer = panel.querySelector<HTMLImageElement>('[data-viewer]');
+
+			thumbs.forEach((thumb, index) => {
+				const isFirst = index === 0;
+				thumb.setAttribute('aria-pressed', String(isFirst));
+				thumb.classList.toggle('selected', isFirst);
+
+				thumb.addEventListener('click', () => {
+					const nextSrc = thumb.dataset.full;
+					const nextAlt =
+						thumb.dataset.alt || viewer?.getAttribute('alt') || '';
+
+					if (viewer && nextSrc) {
+						viewer.setAttribute('src', nextSrc);
+						viewer.setAttribute('alt', nextAlt);
+					}
+
+					thumbs.forEach((item) => {
+						const selected = item === thumb;
+						item.setAttribute('aria-pressed', String(selected));
+						item.classList.toggle('selected', selected);
+					});
+				});
+			});
 		});
 	};
 
-	tabs.forEach((tab) => {
-		tab.addEventListener('click', () => {
-			const targetKey = tab.dataset.tabButton;
-			if (targetKey) setActiveTab(targetKey);
+	const makeGalleryInstance = (keys: string[], layout: 'standard' | 'tile' = 'standard') => {
+		if (!gallerySource) return null;
+
+		const gallery = gallerySource.cloneNode(true) as HTMLElement;
+		gallery.removeAttribute('data-gallery-source');
+
+		const wanted = new Set(keys.map((key) => key.toLowerCase()));
+
+		gallery.querySelectorAll<HTMLElement>('[data-tab-button]').forEach((tab) => {
+			const key = tab.dataset.tabButton?.toLowerCase() ?? '';
+			if (!wanted.has(key)) tab.remove();
 		});
-	});
 
-	panels.forEach((panel) => {
-		const thumbs = panel.querySelectorAll<HTMLButtonElement>('[data-full]');
-		const viewer = panel.querySelector<HTMLImageElement>('[data-viewer]');
+		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+			const key = panel.dataset.tabPanel?.toLowerCase() ?? '';
+			if (!wanted.has(key)) panel.remove();
+		});
 
-		thumbs.forEach((thumb) => {
-			thumb.addEventListener('click', () => {
-				const nextSrc = thumb.dataset.full;
-				const nextAlt = thumb.dataset.alt || viewer?.getAttribute('alt') || '';
+		if (!gallery.querySelector('[data-tab-panel]')) return null;
 
-				if (viewer && nextSrc) {
-					viewer.setAttribute('src', nextSrc);
-					viewer.setAttribute('alt', nextAlt);
-				}
+		if (layout === 'tile') {
+			gallery.classList.add('tile-gallery');
 
-				thumbs.forEach((item) =>
-					item.setAttribute('aria-pressed', String(item === thumb))
-				);
-				thumbs.forEach((item) =>
-					item.classList.toggle('selected', item === thumb)
-				);
+			gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+				const layoutElement = panel.querySelector<HTMLElement>('.gallery-layout');
+				const thumbs = panel.querySelector<HTMLElement>('.thumbs');
+				const viewer = panel.querySelector<HTMLElement>('.viewer');
+
+				if (!layoutElement || !thumbs) return;
+
+				layoutElement.classList.add('tile-grid');
+
+				thumbs.querySelectorAll<HTMLButtonElement>('.thumb').forEach((thumb) => {
+					const image = thumb.querySelector<HTMLImageElement>('img');
+					const full = thumb.dataset.full;
+					const tile = thumb.dataset.tile;
+					const alt = thumb.dataset.alt ?? '';
+
+					if (image && full) {
+						image.src = tile || full;
+						image.alt = alt;
+						image.removeAttribute('width');
+						image.removeAttribute('height');
+					}
+				});
+
+				viewer?.remove();
 			});
-		});
-	});
+
+			initialiseGallery(gallery);
+			return gallery;
+		}
+
+		initialiseGallery(gallery);
+		return gallery;
+	};
+
+	if (gallerySource) {
+		const markerPattern = /^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile))?\s*\]$/i;
+		const content = document.querySelector('.project-content');
+		const markers = content
+			? Array.from(content.querySelectorAll('p')).filter((paragraph) =>
+				markerPattern.test(paragraph.textContent?.trim() ?? ''),
+			)
+			: [];
+
+		if (markers.length === 0) {
+			gallerySource.remove();
+		} else {
+			markers.forEach((paragraph) => {
+				const match = (paragraph.textContent?.trim() ?? '').match(markerPattern);
+				if (!match) return;
+
+				const keys = match[1]
+					.split(',')
+					.map((key) => key.trim())
+					.filter(Boolean);
+
+				const layout = match[2]?.toLowerCase() === 'tile' ? 'tile' : 'standard';
+				const gallery = makeGalleryInstance(keys, layout);
+
+				if (gallery) {
+					paragraph.replaceWith(gallery);
+				} else {
+					paragraph.textContent = `Gallery not found: ${keys.join(', ')}`;
+					paragraph.classList.add('gallery-marker-error');
+				}
+			});
+
+			gallerySource.remove();
+		}
+	}
 </script>
 
 <style>
 	.project-explorer {
 		display: grid;
 		gap: 1.5rem;
+			width: 80%;
+	        margin-inline: auto;
 	}
 
 	.tabs {
@@ -164,7 +363,10 @@ const galleryGroups = [
 		font-weight: 600;
 		color: var(--gray-400);
 		cursor: pointer;
-		transition: background-color var(--theme-transition), color var(--theme-transition), border-color var(--theme-transition);
+		transition:
+			background-color var(--theme-transition),
+			color var(--theme-transition),
+			border-color var(--theme-transition);
 	}
 
 	.tab-button.active,
@@ -196,7 +398,9 @@ const galleryGroups = [
 		overflow: hidden;
 		background: var(--gray-999);
 		cursor: pointer;
-		transition: border-color var(--theme-transition), transform var(--theme-transition);
+		transition:
+			border-color var(--theme-transition),
+			transform var(--theme-transition);
 	}
 
 	.thumb img {
@@ -223,14 +427,47 @@ const galleryGroups = [
 		display: block;
 		width: 100%;
 		height: min(70vh, 48rem);
-		object-fit: cover;
+		object-fit: contain;
 		background: var(--gray-50);
+	}
+
+	.tile-gallery .tabs {
+		margin-bottom: 0;
+	}
+
+	.tile-gallery .tile-grid {
+		display: block;
+	}
+
+	.tile-gallery .thumbs {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.tile-gallery .thumb {
+		aspect-ratio: 1 / 1;
+		border-radius: 1rem;
+		cursor: default;
+	}
+
+	.tile-gallery .thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	.empty {
 		padding: 1.5rem;
 		border: 1px dashed var(--gray-800);
 		border-radius: 1rem;
+		color: var(--gray-400);
+	}
+
+	:global(.gallery-marker-error) {
+		padding: 0.75rem 1rem;
+		border: 1px dashed currentColor;
+		border-radius: 0.75rem;
 		color: var(--gray-400);
 	}
 
@@ -242,6 +479,18 @@ const galleryGroups = [
 		}
 	}
 
+	@media (min-width: 34em) {
+		.tile-gallery .thumbs {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 64em) {
+		.tile-gallery .thumbs {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
 	@media (min-width: 50em) {
 		.gallery-layout {
 			grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
@@ -250,6 +499,16 @@ const galleryGroups = [
 
 		.thumbs {
 			grid-template-columns: 1fr;
+		}
+
+		.tile-gallery .thumbs {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 64em) {
+		.tile-gallery .thumbs {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
 </style>
