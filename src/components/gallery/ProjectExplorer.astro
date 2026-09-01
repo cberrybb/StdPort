@@ -17,9 +17,11 @@
  * -------------------------
  * [gallery:A]          standard gallery
  * [gallery:A,B]        combined standard gallery
- * [gallery:A /tile]    tile gallery with authoring QA
- * [gallery:A,B /tile]  combined tile gallery
- * [gallery:A /tile /p] tile gallery with QA warnings suppressed
+ * [gallery:A /tile]           tile gallery with authoring QA
+ * [gallery:A,B /tile]         combined tile gallery
+ * [gallery:A /tile /p]        tile gallery with QA warnings suppressed
+ * [gallery:A /row]            row gallery, 3 images per row by default
+ * [gallery:A /row:3,2,3,2,1] row gallery with explicit row counts
  *
  * /p affects QA only. It never hides the gallery.
  *
@@ -36,6 +38,7 @@ import type { CollectionEntry } from 'astro:content';
 import { buildGalleryGroups } from './gallery';
 import StandardGallery from './StandardGallery.astro';
 import TileGallery from './TileGallery.astro';
+import RowGallery from './RowGallery.astro';
 
 interface Props {
 	project: CollectionEntry<'work'>;
@@ -58,6 +61,11 @@ const galleryGroups = buildGalleryGroups(project);
 				projectTitle={project.data.title}
 				source
 			/>
+			<RowGallery
+				groups={galleryGroups}
+				projectTitle={project.data.title}
+				source
+			/>
 		</div>
 	)
 }
@@ -68,19 +76,26 @@ const galleryGroups = buildGalleryGroups(project);
 	 * become renderers, not branches full of rendering code in this file.
 	 */
 	const markerPattern =
-		/^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile))?(?:\s+\/(p))?\s*\]$/i;
+		/^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile|row(?::\d+(?:,\d+)*)?))?(?:\s+\/(p))?\s*\]$/i;
 
 	const sources = document.querySelector<HTMLElement>('[data-project-gallery-sources]');
 	const standardSource = sources?.querySelector<HTMLElement>('[data-gallery-template="standard"]');
 	const tileSource = sources?.querySelector<HTMLElement>('[data-gallery-template="tile"]');
+	const rowSource = sources?.querySelector<HTMLElement>('[data-gallery-template="row"]');
 	const content = document.querySelector('.project-content');
 
 	const makeGalleryInstance = (
 		keys: string[],
-		layout: 'standard' | 'tile',
+		layout: 'standard' | 'tile' | 'row',
 		publishMode: boolean,
+		rowPattern = '',
 	) => {
-		const source = layout === 'tile' ? tileSource : standardSource;
+		const source =
+			layout === 'tile'
+				? tileSource
+				: layout === 'row'
+					? rowSource
+					: standardSource;
 		if (!source) return null;
 
 		const gallery = source.cloneNode(true) as HTMLElement;
@@ -89,6 +104,10 @@ const galleryGroups = buildGalleryGroups(project);
 
 		if (publishMode && layout === 'tile') {
 			gallery.setAttribute('data-publish-mode', '');
+		}
+
+		if (layout === 'row') {
+			gallery.dataset.rowPattern = rowPattern;
 		}
 
 		const wanted = new Set(keys.map((key) => key.toLowerCase()));
@@ -136,9 +155,16 @@ const galleryGroups = buildGalleryGroups(project);
 				.map((key) => key.trim())
 				.filter(Boolean);
 
-			const layout = match[2]?.toLowerCase() === 'tile' ? 'tile' : 'standard';
+			const mode = match[2]?.toLowerCase() ?? '';
+			const layout =
+				mode.startsWith('row')
+					? 'row'
+					: mode === 'tile'
+						? 'tile'
+						: 'standard';
+			const rowPattern = mode.startsWith('row:') ? mode.slice(4) : '';
 			const publishMode = match[3]?.toLowerCase() === 'p';
-			const gallery = makeGalleryInstance(keys, layout, publishMode);
+			const gallery = makeGalleryInstance(keys, layout, publishMode, rowPattern);
 
 			if (gallery) {
 				paragraph.replaceWith(gallery);

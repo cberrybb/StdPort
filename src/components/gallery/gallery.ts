@@ -22,6 +22,8 @@
  *   [gallery:A,B]
  *   [gallery:A /tile]
  *   [gallery:A /tile /p]
+ *   [gallery:A /row]
+ *   [gallery:A /row:3,2,3,2,1]
  *
  * IMPORTANT
  * ---------

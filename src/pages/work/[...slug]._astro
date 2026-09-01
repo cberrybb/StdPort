@@ -31,12 +31,11 @@ const sourceFile = entry.filePath?.replace(/\\/g, '/') ?? '';
 const projectFolder =
 	sourceFile.match(/src\/content\/work\/([^/]+)\//)?.[1] ?? '';
 
-const projectImages = import.meta.glob(
+const heroImages = import.meta.glob(
 	[
-		'/src/content/work/**/*.png',
-		'/src/content/work/**/*.jpg',
-		'/src/content/work/**/*.jpeg',
-		'/src/content/work/**/*.webp',
+		'/src/content/work/**/PHero.png',
+		'/src/content/work/**/PHero.jpg',
+		'/src/content/work/**/PHero.jpeg',
 	],
 	{
 		eager: true,
@@ -45,17 +44,13 @@ const projectImages = import.meta.glob(
 	},
 ) as Record<string, string>;
 
-const folderHero = Object.entries(projectImages).find(([path]) =>
+const folderHero = Object.entries(heroImages).find(([path]) =>
 	path.includes(`/src/content/work/${projectFolder}/PHero.`)
 )?.[1];
 
-const localHeroImage = entry.data.heroImage
-	? Object.entries(projectImages).find(([path]) =>
-			path === `/src/content/work/${projectFolder}/${entry.data.heroImage}`,
-		)?.[1]
-	: undefined;
-
-const heroImage = folderHero || localHeroImage;
+const heroImage =
+	folderHero ||
+	entry.data.img;
 
 const projectCategory =
 	entry.data.category ||
@@ -93,13 +88,11 @@ const { Content } = await render(entry);
 
 		<main class="project-main">
 
-			{heroImage && (
-				<img
-					class="hero-image"
-					src={heroImage}
-					alt={entry.data.img_alt || entry.data.title}
-				/>
-			)}
+			<img
+				class="hero-image"
+				src={heroImage}
+				alt={entry.data.img_alt || entry.data.title}
+			/>
 
 			<ProjectExplorer project={entry} />
 

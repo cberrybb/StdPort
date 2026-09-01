@@ -3,6 +3,7 @@ description: |
   An ongoing design relationship spanning web, print, presentations and
   events. Creating a flexible visual language across very different
   formats and audiences.
+
 gallery:
   A:
     title: Sailing day trips
@@ -15,17 +16,30 @@ gallery:
         line2: Test line two
   B: Sunset Sailing
   C: A flexible identity
-heroImage: A2.png
+
+# Project hero override. Rename PHero.png (e.g. PHero._ng) to disable the automatic folder hero and activate this selection.
+
+heroImage: A1.png
 img_alt: Foundation Capital presentation and event design
 publishDate: "2025-03-02 00:00:00"
 tags:
-- MEditorial
-- Print
-- Presentation
+  - MEditorial
+  - Print
+  - Presentation
 title: Haris Capital
 ---
 
 ## Haris Capital
+
+[gallery: A /row:4]
+
+
+## End gallery
+
+[gallery: B /tile]
+
+[gallery: B]
+
 ### Amen
 
 > One client. A lot of formats. A visual system flexible enough to
@@ -37,7 +51,7 @@ The challenge was less about creating one recognisable object and more
 about maintaining a consistent visual character across projects with
 very different purposes, proportions and audiences.
 
-[gallery: A /tile]
+[gallery: A ]
 
 [gallery: B /tile]
 
@@ -72,7 +86,7 @@ language.
 ### A flexible identity
 
 The strongest part of the work is its range. Rather than applying one
-fixed style repeatedly, the identity adapts to the job --- sometimes
+fixed style repeatedly, the identity adapts to the job — sometimes
 formal and information-led, sometimes more playful and unexpected.
 
 The result is a collection of work that feels related without looking
@@ -80,7 +94,7 @@ repetitive.
 
 #### Notes
 
--   Consistency does not mean repetition.
--   Different formats need different solutions.
--   Hierarchy carries complex information.
--   A useful identity should be able to stretch.
+- Consistency does not mean repetition.
+- Different formats need different solutions.
+- Hierarchy carries complex information.
+- A useful identity should be able to stretch.
