@@ -1,0 +1,167 @@
+---
+/**
+ * ProjectExplorer
+ *
+ * The coordinator for project galleries.
+ *
+ * Its job is deliberately narrow:
+ * 1. Ask gallery.ts to resolve this project's gallery data.
+ * 2. Render hidden StandardGallery and TileGallery source templates.
+ * 3. Find gallery markers in the rendered Markdown.
+ * 4. Clone the correct renderer into each marker position.
+ *
+ * It does NOT know how standard or tile galleries are visually rendered.
+ * It does NOT know how filenames map to images.
+ *
+ * CURRENT MARKDOWN LANGUAGE
+ * -------------------------
+ * [gallery:A]          standard gallery
+ * [gallery:A,B]        combined standard gallery
+ * [gallery:A /tile]    tile gallery with authoring QA
+ * [gallery:A,B /tile]  combined tile gallery
+ * [gallery:A /tile /p] tile gallery with QA warnings suppressed
+ *
+ * /p affects QA only. It never hides the gallery.
+ *
+ * IMPORTANT ARCHITECTURAL NOTE
+ * ----------------------------
+ * Markdown is rendered by the project page after this component, so Astro
+ * cannot directly replace gallery markers at build time here. The hidden
+ * source-template + clone step is therefore retained intentionally for this
+ * behaviour-preserving refactor. A future architecture can remove it, but
+ * that should be a separate change.
+ */
+
+import type { CollectionEntry } from 'astro:content';
+import { buildGalleryGroups } from './gallery';
+import StandardGallery from './StandardGallery.astro';
+import TileGallery from './TileGallery.astro';
+
+interface Props {
+	project: CollectionEntry<'work'>;
+}
+
+const { project } = Astro.props;
+const galleryGroups = buildGalleryGroups(project);
+---
+
+{
+	galleryGroups.length > 0 && (
+		<div data-project-gallery-sources>
+			<StandardGallery
+				groups={galleryGroups}
+				projectTitle={project.data.title}
+				source
+			/>
+			<TileGallery
+				groups={galleryGroups}
+				projectTitle={project.data.title}
+				source
+			/>
+		</div>
+	)
+}
+
+<script>
+	/**
+	 * Keep marker parsing small and explicit. New presentation modes should
+	 * become renderers, not branches full of rendering code in this file.
+	 */
+	const markerPattern =
+		/^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile))?(?:\s+\/(p))?\s*\]$/i;
+
+	const sources = document.querySelector<HTMLElement>('[data-project-gallery-sources]');
+	const standardSource = sources?.querySelector<HTMLElement>('[data-gallery-template="standard"]');
+	const tileSource = sources?.querySelector<HTMLElement>('[data-gallery-template="tile"]');
+	const content = document.querySelector('.project-content');
+
+	const makeGalleryInstance = (
+		keys: string[],
+		layout: 'standard' | 'tile',
+		publishMode: boolean,
+	) => {
+		const source = layout === 'tile' ? tileSource : standardSource;
+		if (!source) return null;
+
+		const gallery = source.cloneNode(true) as HTMLElement;
+		gallery.removeAttribute('data-gallery-template');
+		gallery.removeAttribute('hidden');
+
+		if (publishMode && layout === 'tile') {
+			gallery.setAttribute('data-publish-mode', '');
+		}
+
+		const wanted = new Set(keys.map((key) => key.toLowerCase()));
+
+		gallery.querySelectorAll<HTMLElement>('[data-tab-button]').forEach((tab) => {
+			const key = tab.dataset.tabButton?.toLowerCase() ?? '';
+			if (!wanted.has(key)) tab.remove();
+		});
+
+		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+			const key = panel.dataset.tabPanel?.toLowerCase() ?? '';
+			if (!wanted.has(key)) panel.remove();
+		});
+
+		const tabs = gallery.querySelectorAll<HTMLButtonElement>('[data-tab-button]');
+		const panels = gallery.querySelectorAll<HTMLElement>('[data-tab-panel]');
+		if (panels.length === 0) return null;
+
+		// Reset active state after filtering. This fixes combined/single markers
+		// that do not include the project's first declared gallery.
+		const firstKey = tabs[0]?.dataset.tabButton ?? '';
+		tabs.forEach((tab, index) => {
+			const active = index === 0;
+			tab.setAttribute('aria-selected', String(active));
+			tab.classList.toggle('active', active);
+		});
+		panels.forEach((panel) => {
+			panel.hidden = panel.dataset.tabPanel !== firstKey;
+		});
+
+		return gallery;
+	};
+
+	if (sources && content) {
+		const markers = Array.from(content.querySelectorAll('p')).filter((paragraph) =>
+			markerPattern.test(paragraph.textContent?.trim() ?? ''),
+		);
+
+		markers.forEach((paragraph) => {
+			const match = (paragraph.textContent?.trim() ?? '').match(markerPattern);
+			if (!match) return;
+
+			const keys = match[1]
+				.split(',')
+				.map((key) => key.trim())
+				.filter(Boolean);
+
+			const layout = match[2]?.toLowerCase() === 'tile' ? 'tile' : 'standard';
+			const publishMode = match[3]?.toLowerCase() === 'p';
+			const gallery = makeGalleryInstance(keys, layout, publishMode);
+
+			if (gallery) {
+				paragraph.replaceWith(gallery);
+				document.dispatchEvent(
+					new CustomEvent('gallery:inserted', { detail: gallery }),
+				);
+			} else {
+				paragraph.textContent = `Gallery not found: ${keys.join(', ')}`;
+				paragraph.classList.add('gallery-marker-error');
+			}
+		});
+
+		sources.remove();
+	} else {
+		sources?.remove();
+	}
+</script>
+
+<style>
+	:global(.gallery-marker-error) {
+		padding: 0.75rem 1rem;
+		border: 1px dashed currentColor;
+		border-radius: 0.75rem;
+		color: var(--gray-400);
+	}
+</style>
