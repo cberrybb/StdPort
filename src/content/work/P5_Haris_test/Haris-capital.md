@@ -4,10 +4,18 @@ description: |
   events. Creating a flexible visual language across very different
   formats and audiences.
 gallery:
-  A: Sailing day trips
+  A:
+    title: Sailing day trips
+    tiles:
+      1:
+        line1: Image thumnail title
+        line2: Text B line
+      2:
+        line1: Test line one
+        line2: Test line two
   B: Sunset Sailing
   C: A flexible identity
-heroImage: A1.png
+heroImage: A2.png
 img_alt: Foundation Capital presentation and event design
 publishDate: "2025-03-02 00:00:00"
 tags:
@@ -17,8 +25,8 @@ tags:
 title: Haris Capital
 ---
 
-# Haris Capital
-## Amen
+## Haris Capital
+### Amen
 
 > One client. A lot of formats. A visual system flexible enough to
 > handle all of them.
@@ -30,6 +38,8 @@ about maintaining a consistent visual character across projects with
 very different purposes, proportions and audiences.
 
 [gallery: A /tile]
+
+[gallery: B /tile]
 
 ### Building for variety
 

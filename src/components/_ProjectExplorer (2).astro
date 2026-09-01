@@ -31,16 +31,7 @@ const galleryDefinition = project.data.gallery ?? {};
 const escapeRegExp = (value: string) =>
 	value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const galleryGroups = Object.entries(galleryDefinition).map(([key, definition]) => {
-	const label =
-		typeof definition === 'string'
-			? definition
-			: definition.title ?? '';
-
-	const tileMetadata =
-		typeof definition === 'string'
-			? {}
-			: definition.tiles ?? {};
+const galleryGroups = Object.entries(galleryDefinition).map(([key, label]) => {
 	const filePattern = new RegExp(
 		`^${escapeRegExp(key)}(\\d+)(T?)\\.(png|jpe?g|webp|gif|avif)$`,
 		'i',
@@ -96,19 +87,11 @@ const galleryGroups = Object.entries(galleryDefinition).map(([key, definition]) 
 	const items = Array.from(byOrder.entries())
 		.filter(([, item]) => Boolean(item.url))
 		.sort(([a], [b]) => a - b)
-		.map(([order, item], displayIndex) => {
-			const position = displayIndex + 1;
-			const metadata = tileMetadata[String(position)] ?? {};
-
-			return {
-				url: item.url as string,
-				tileUrl: item.tileUrl,
-				order,
-				position,
-				line1: metadata.line1 ?? '',
-				line2: metadata.line2 ?? '',
-			};
-		});
+		.map(([order, item]) => ({
+			url: item.url as string,
+			tileUrl: item.tileUrl,
+			order,
+		}));
 
 	return {
 		key,
@@ -166,9 +149,6 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 											data-full={image.url}
 											data-tile={image.tileUrl}
 											data-tile-label={`${key}${image.order}T missing`}
-											data-tile-position={String(image.position)}
-											data-line1={image.line1}
-											data-line2={image.line2}
 											data-alt={`${project.data.title} ${label} ${index + 1}`}
 											aria-label={`View ${label} image ${index + 1}`}
 											aria-pressed={
@@ -266,11 +246,7 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 		});
 	};
 
-	const makeGalleryInstance = (
-		keys: string[],
-		layout: 'standard' | 'tile' = 'standard',
-		publishMode = false,
-	) => {
+	const makeGalleryInstance = (keys: string[], layout: 'standard' | 'tile' = 'standard') => {
 		if (!gallerySource) return null;
 
 		const gallery = gallerySource.cloneNode(true) as HTMLElement;
@@ -308,12 +284,6 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 					const tile = thumb.dataset.tile;
 					const alt = thumb.dataset.alt ?? '';
 					const missingLabel = thumb.dataset.tileLabel ?? 'Tile image missing';
-					const position = thumb.dataset.tilePosition ?? '?';
-					const line1 = thumb.dataset.line1?.trim() ?? '';
-					const line2 = thumb.dataset.line2?.trim() ?? '';
-
-					thumb.classList.add('tile-expandable');
-					thumb.setAttribute('aria-label', `${alt || `Tile ${position}`}. Click to expand`);
 
 					if (image && full) {
 						image.src = tile || full;
@@ -322,78 +292,12 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 						image.removeAttribute('height');
 					}
 
-					if (!tile && !publishMode) {
+					if (!tile) {
 						const warning = document.createElement('span');
 						warning.className = 'tile-missing';
 						warning.textContent = missingLabel;
 						thumb.appendChild(warning);
 					}
-
-					const primaryText =
-						line1 || (publishMode ? '' : `Tile ${position} line1 missing`);
-					const secondaryText =
-						line2 || (publishMode ? '' : `Tile ${position} line2 missing`);
-
-					if (primaryText || secondaryText) {
-						const copy = document.createElement('span');
-						copy.className = 'tile-copy';
-
-						if (primaryText) {
-							const primary = document.createElement('span');
-							primary.className = 'tile-line tile-line1';
-							primary.textContent = primaryText;
-							copy.appendChild(primary);
-						}
-
-						if (secondaryText) {
-							const secondary = document.createElement('span');
-							secondary.className = 'tile-line tile-line2';
-							secondary.textContent = secondaryText;
-							copy.appendChild(secondary);
-						}
-
-						thumb.appendChild(copy);
-					}
-
-					thumb.addEventListener('click', (event) => {
-						event.preventDefault();
-						if (!full) return;
-
-						const overlay = document.createElement('div');
-						overlay.className = 'gallery-lightbox';
-						overlay.setAttribute('role', 'dialog');
-						overlay.setAttribute('aria-modal', 'true');
-						overlay.setAttribute('aria-label', alt || `Expanded tile ${position}`);
-
-						const expanded = document.createElement('img');
-						expanded.src = full;
-						expanded.alt = alt;
-
-						const close = document.createElement('button');
-						close.type = 'button';
-						close.className = 'gallery-lightbox-close';
-						close.setAttribute('aria-label', 'Close expanded image');
-						close.textContent = '×';
-
-						const dismiss = () => overlay.remove();
-
-						close.addEventListener('click', dismiss);
-						overlay.addEventListener('click', (overlayEvent) => {
-							if (overlayEvent.target === overlay) dismiss();
-						});
-
-						const onKeyDown = (keyEvent: KeyboardEvent) => {
-							if (keyEvent.key === 'Escape') {
-								dismiss();
-								document.removeEventListener('keydown', onKeyDown);
-							}
-						};
-
-						document.addEventListener('keydown', onKeyDown);
-						overlay.append(expanded, close);
-						document.body.appendChild(overlay);
-						close.focus();
-					});
 				});
 
 				viewer?.remove();
@@ -408,7 +312,7 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 	};
 
 	if (gallerySource) {
-		const markerPattern = /^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile))?(?:\s+\/(p))?\s*\]$/i;
+		const markerPattern = /^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile))?\s*\]$/i;
 		const content = document.querySelector('.project-content');
 		const markers = content
 			? Array.from(content.querySelectorAll('p')).filter((paragraph) =>
@@ -429,8 +333,7 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 					.filter(Boolean);
 
 				const layout = match[2]?.toLowerCase() === 'tile' ? 'tile' : 'standard';
-				const publishMode = match[3]?.toLowerCase() === 'p';
-				const gallery = makeGalleryInstance(keys, layout, publishMode);
+				const gallery = makeGalleryInstance(keys, layout);
 
 				if (gallery) {
 					paragraph.replaceWith(gallery);
@@ -554,7 +457,7 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 	.tile-gallery .thumb {
 		aspect-ratio: 1 / 1;
 		border-radius: 1rem;
-		cursor: zoom-in;
+		cursor: default;
 	}
 
 	.tile-gallery .thumb img {
@@ -570,76 +473,15 @@ const firstGroupKey = galleryGroups[0]?.key ?? '';
 
 	.tile-gallery :global(.tile-missing) {
 		position: absolute;
-		top: 0.6rem;
-		left: 0.6rem;
-		padding: 0.35rem 0.55rem;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.9);
-		color: #111;
-		font-size: 0.7rem;
-		font-weight: 700;
-		line-height: 1;
-		pointer-events: none;
-	}
-
-	.tile-gallery :global(.tile-copy) {
-		position: absolute;
 		inset: auto 0 0 0;
-		display: grid;
-		gap: 0.15rem;
-		padding: 0.7rem 0.8rem;
-		background: rgba(255, 255, 255, 0.9);
+		padding: 0.55rem 0.7rem;
+		background: rgba(255, 255, 255, 0.88);
 		color: #111;
+		font-size: 0.75rem;
+		font-weight: 700;
+		line-height: 1.2;
 		text-align: center;
 		pointer-events: none;
-	}
-
-	.tile-gallery :global(.tile-line) {
-		display: block;
-		line-height: 1.2;
-	}
-
-	.tile-gallery :global(.tile-line1) {
-		font-weight: 700;
-	}
-
-	.tile-gallery :global(.tile-line2) {
-		font-size: 0.82rem;
-	}
-
-	:global(.gallery-lightbox) {
-		position: fixed;
-		inset: 0;
-		z-index: 9999;
-		display: grid;
-		place-items: center;
-		padding: 2rem;
-		background: rgba(0, 0, 0, 0.88);
-	}
-
-	:global(.gallery-lightbox img) {
-		display: block;
-		max-width: min(94vw, 120rem);
-		max-height: 90vh;
-		width: auto;
-		height: auto;
-		object-fit: contain;
-	}
-
-	:global(.gallery-lightbox-close) {
-		position: fixed;
-		top: 1rem;
-		right: 1rem;
-		width: 2.75rem;
-		height: 2.75rem;
-		border: 0;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.92);
-		color: #111;
-		font: inherit;
-		font-size: 1.75rem;
-		line-height: 1;
-		cursor: pointer;
 	}
 
 	.empty {

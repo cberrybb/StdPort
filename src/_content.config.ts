@@ -27,24 +27,7 @@ export const collections = {
 			heroImage: z.string().optional(),
 
 			gallery: z
-				.record(
-					z.string(),
-					z.union([
-						z.string(),
-						z.object({
-							title: z.string().default(''),
-							tiles: z
-								.record(
-									z.string(),
-									z.object({
-										line1: z.string().optional(),
-										line2: z.string().optional(),
-									}),
-								)
-								.default({}),
-						}),
-					]),
-				)
+				.record(z.string(), z.string())
 				.optional(),
 		}),
 	}),
