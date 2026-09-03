@@ -8,6 +8,9 @@ tags:
   - Editorial Design
   - Typography
   - Publication Design
+tileFilter: "#5eb066"
+tileL1: "Editorial"
+tileL2: "The Macramé of Resistance"
 ---
 
 # Editorial Design

@@ -9,6 +9,10 @@ tags:
   - CMS
   - Astro
   - AI
+tileFilter: "#e3a1db"
+# tileImage: "A1T.jpg"  
+tileL1: "P7 Astro to CMS"
+tileL2: "Making projects emerge from varied media themselves"
 ---
 
 # A File-Based Portfolio CMS

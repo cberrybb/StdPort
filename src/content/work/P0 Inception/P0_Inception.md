@@ -9,6 +9,9 @@ tags:
   - Inception
   - AI
   - Process
+tileFilter: "#181b60"
+tileL1: "P0: Inception"
+tileL2: "The crude concept"
 ---
 
 # Inception

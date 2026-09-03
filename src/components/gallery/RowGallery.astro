@@ -60,7 +60,7 @@ const firstGroupKey = groups[0]?.key ?? '';
 				{items.length > 0 ? (
 					<div class="row-items" data-row-items>
 						{items.map((image, index) => (
-							<figure class="row-item" data-row-item>
+							<figure class="row-item" data-row-item tabindex="0" role="button" aria-label={`Expand ${projectTitle} ${label} ${index + 1}`}>
 								<img
 									src={image.url}
 									alt={`${projectTitle} ${label} ${index + 1}`}
@@ -213,8 +213,46 @@ const firstGroupKey = groups[0]?.key ?? '';
 		if (gallery?.classList.contains('row-gallery')) prepareRowGallery(gallery);
 	});
 
+	const closeRowLightbox = () => {
+		document.querySelector<HTMLElement>('.row-gallery-lightbox')?.remove();
+		document.body.classList.remove('row-gallery-lightbox-open');
+	};
+
+	const openRowLightbox = (item: HTMLElement) => {
+		const image = item.querySelector<HTMLImageElement>('img');
+		if (!image) return;
+
+		closeRowLightbox();
+
+		const overlay = document.createElement('div');
+		overlay.className = 'row-gallery-lightbox';
+		overlay.setAttribute('role', 'dialog');
+		overlay.setAttribute('aria-modal', 'true');
+		overlay.setAttribute('aria-label', image.alt || 'Expanded gallery image');
+
+		const expanded = document.createElement('img');
+		expanded.src = image.currentSrc || image.src;
+		expanded.alt = image.alt;
+
+		overlay.appendChild(expanded);
+		document.body.appendChild(overlay);
+		document.body.classList.add('row-gallery-lightbox-open');
+
+		overlay.addEventListener('click', (event) => {
+			if (event.target === overlay) closeRowLightbox();
+		});
+	};
+
 	document.addEventListener('click', (event) => {
 		const target = event.target as HTMLElement;
+		const item = target.closest<HTMLElement>(
+			'.row-gallery:not([data-gallery-template]) [data-row-item]',
+		);
+		if (item) {
+			openRowLightbox(item);
+			return;
+		}
+
 		const tab = target.closest<HTMLButtonElement>(
 			'.row-gallery:not([data-gallery-template]) [data-tab-button]',
 		);
@@ -235,6 +273,24 @@ const firstGroupKey = groups[0]?.key ?? '';
 		});
 
 		requestAnimationFrame(() => layoutGalleryRows(gallery));
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') {
+			closeRowLightbox();
+			return;
+		}
+
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+
+		const target = event.target as HTMLElement;
+		const item = target.closest<HTMLElement>(
+			'.row-gallery:not([data-gallery-template]) [data-row-item]',
+		);
+		if (!item) return;
+
+		event.preventDefault();
+		openRowLightbox(item);
 	});
 </script>
 
@@ -296,6 +352,12 @@ const firstGroupKey = groups[0]?.key ?? '';
 		overflow: hidden;
 		border-radius: 1rem;
 		background: var(--gray-50);
+		cursor: zoom-in;
+	}
+
+	.row-item:focus-visible {
+		outline: 2px solid currentColor;
+		outline-offset: 3px;
 	}
 
 	.row-item img {
@@ -303,6 +365,32 @@ const firstGroupKey = groups[0]?.key ?? '';
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
+	}
+
+	:global(.row-gallery-lightbox) {
+		position: fixed;
+		inset: 0;
+		z-index: 10020;
+		display: grid;
+		place-items: center;
+		padding: 5vh 10vw;
+		background: rgba(255, 255, 255, 0.88);
+		cursor: zoom-out;
+	}
+
+	:global(.row-gallery-lightbox img) {
+		display: block;
+		width: auto;
+		height: auto;
+		max-width: 80vw;
+		max-height: 90vh;
+		object-fit: contain;
+		box-shadow: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.12);
+		cursor: default;
+	}
+
+	:global(body.row-gallery-lightbox-open) {
+		overflow: hidden;
 	}
 
 	.empty {

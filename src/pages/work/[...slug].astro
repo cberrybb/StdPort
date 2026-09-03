@@ -1,6 +1,5 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
-
 import ProjectExplorer from '../../components/gallery/ProjectExplorer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
@@ -27,7 +26,6 @@ const { entry } = Astro.props;
  * P1_advanced
  */
 const sourceFile = entry.filePath?.replace(/\\/g, '/') ?? '';
-
 const projectFolder =
 	sourceFile.match(/src\/content\/work\/([^/]+)\//)?.[1] ?? '';
 
@@ -46,12 +44,14 @@ const projectImages = import.meta.glob(
 ) as Record<string, string>;
 
 const folderHero = Object.entries(projectImages).find(([path]) =>
-	path.includes(`/src/content/work/${projectFolder}/PHero.`)
+	path.includes(`/src/content/work/${projectFolder}/PHero.`),
 )?.[1];
 
 const localHeroImage = entry.data.heroImage
-	? Object.entries(projectImages).find(([path]) =>
-			path === `/src/content/work/${projectFolder}/${entry.data.heroImage}`,
+	? Object.entries(projectImages).find(
+			([path]) =>
+				path ===
+				`/src/content/work/${projectFolder}/${entry.data.heroImage}`,
 		)?.[1]
 	: undefined;
 
@@ -70,20 +70,14 @@ const { Content } = await render(entry);
 	description={entry.data.description}
 >
 	<div class="project-page wrapper">
-
-		<header class="intro-header">
-
-			<div class="header-copy">
+		<header class="intro-header" data-project-intro>
+			<div class="header-copy" data-intro-copy>
 				<div class="meta-block">
 					<p class="eyebrow">{projectCategory}</p>
-
 					<h1>{entry.data.title}</h1>
-
 					<p class="context">{entry.data.description}</p>
-
 					<div class="meta-row">
 						{entry.data.year && <span>{entry.data.year}</span>}
-
 						{entry.data.tags?.length > 0 && (
 							<span>{entry.data.tags.join(' / ')}</span>
 						)}
@@ -94,6 +88,7 @@ const { Content } = await render(entry);
 			{heroImage && (
 				<img
 					class="hero-image"
+					data-hero-image
 					src={heroImage}
 					alt={entry.data.img_alt || entry.data.title}
 				/>
@@ -101,17 +96,50 @@ const { Content } = await render(entry);
 		</header>
 
 		<main class="project-main">
-
 			<ProjectExplorer project={entry} />
 
 			<div class="project-content">
 				<Content />
 			</div>
-
 		</main>
-
 	</div>
 </BaseLayout>
+
+<script>
+	const sizePortraitHeroes = () => {
+		document.querySelectorAll<HTMLElement>('[data-project-intro]').forEach((header) => {
+			const copy = header.querySelector<HTMLElement>('[data-intro-copy]');
+			const image = header.querySelector<HTMLImageElement>('[data-hero-image]');
+			if (!copy || !image) return;
+
+			const applySize = () => {
+				const isPortrait = image.naturalHeight > image.naturalWidth;
+
+				if (!isPortrait) {
+					image.classList.remove('is-portrait');
+					image.style.removeProperty('--intro-copy-height');
+					return;
+				}
+
+				image.classList.add('is-portrait');
+				image.style.setProperty(
+					'--intro-copy-height',
+					`${Math.round(copy.getBoundingClientRect().height)}px`,
+				);
+			};
+
+			if (image.complete) {
+				applySize();
+			} else {
+				image.addEventListener('load', applySize, { once: true });
+			}
+
+			window.addEventListener('resize', applySize);
+		});
+	};
+
+	sizePortraitHeroes();
+</script>
 
 <style>
 	.project-page {
@@ -176,6 +204,25 @@ const { Content } = await render(entry);
 		border-radius: 1.5rem;
 		border: 1px solid var(--gray-800);
 		box-shadow: var(--shadow-md);
+	}
+
+	/*
+	 * Portrait heroes are allowed to be larger than the intro copy,
+	 * but not to dominate the opening of the project page.
+	 *
+	 * The cap is 2.5 × the rendered intro-copy height, with a second
+	 * 90vh ceiling so there is always breathing room in the viewport.
+	 * The image is never cropped.
+	 */
+	.hero-image.is-portrait {
+		width: auto;
+		max-width: 100%;
+		max-height: min(
+			90vh,
+			calc(var(--intro-copy-height, 20rem) * 2.5)
+		);
+		object-fit: contain;
+		justify-self: start;
 	}
 
 	.project-main {
@@ -253,6 +300,13 @@ const { Content } = await render(entry);
 	@media (max-width: 49.99em) {
 		.project-page {
 			width: 90%;
+		}
+
+		/* On the stacked mobile layout, use the normal full-width hero. */
+		.hero-image.is-portrait {
+			width: 100%;
+			max-height: none;
+			justify-self: stretch;
 		}
 	}
 </style>

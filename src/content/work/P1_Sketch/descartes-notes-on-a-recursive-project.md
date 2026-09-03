@@ -9,6 +9,10 @@ tags:
   - AI
   - Documentation
   - Process
+tileFilter: "#5e7bb0"
+# tileImage: "A1T.jpg"  
+tileL1: "P1 Descartes: "
+tileL2: "Notes on a Recursive Project"
 ---
 
 # Descartes

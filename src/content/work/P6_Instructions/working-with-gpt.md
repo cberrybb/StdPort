@@ -9,6 +9,10 @@ tags:
   - AI
   - Collaboration
   - Development
+tileFilter: "#23443e"
+# tileImage: "A1T.jpg"  
+tileL1: "P6 Working.... "
+tileL2: "With LLMs"
 ---
 
 # Working with GPT: Establish Reality Fast

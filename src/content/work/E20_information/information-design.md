@@ -8,6 +8,9 @@ tags:
   - Information Design
   - Data Visualisation
   - Poster Design
+tileFilter: "#cd5555"
+tileL1: "Information Design"
+tileL2: "Geometric line-art pictograms"
 ---
 
 # Information Design

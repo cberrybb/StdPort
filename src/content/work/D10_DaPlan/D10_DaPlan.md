@@ -9,6 +9,9 @@ tags:
   - Plan
   - Tasks
   - Progress
+tileFilter: "#4dd9e0"
+tileL1: "D10 The Plan"
+tileL2: "An idea of how we got here - not what we planned to do"
 ---
 
 # DaPlan

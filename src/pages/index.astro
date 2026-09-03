@@ -6,29 +6,182 @@ import Hero from '../components/Hero.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
+/**
+ * HOMEPAGE AUTHOR CONTROLS
+ *
+ * Set the published default here:
+ *   defaultView: 'cards' | 'tiles'
+ *   tileColumns: 2 | 3 | 4
+ *
+ * Keep showControls: true while designing the homepage.
+ * Set it to false when the layout is chosen and the authoring pills disappear.
+ */
+const homepageLayout = {
+	defaultView: 'cards' as 'cards' | 'tiles',
+	tileColumns: 3 as 2 | 3 | 4,
+	showControls: true,
+};
+
 const projects = (await getCollection('work')).sort(
-  (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+	(a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime(),
 );
+
+const heroImages = import.meta.glob(
+	[
+		'/src/content/work/**/PHero.png',
+		'/src/content/work/**/PHero.jpg',
+		'/src/content/work/**/PHero.jpeg',
+	],
+	{
+		eager: true,
+		query: '?url',
+		import: 'default',
+	},
+) as Record<string, string>;
+
+const projectImages = import.meta.glob(
+	[
+		'/src/content/work/**/*.png',
+		'/src/content/work/**/*.jpg',
+		'/src/content/work/**/*.jpeg',
+		'/src/content/work/**/*.webp',
+		'/src/content/work/**/*.gif',
+		'/src/content/work/**/*.avif',
+	],
+	{
+		eager: true,
+		query: '?url',
+		import: 'default',
+	},
+) as Record<string, string>;
+
+const projectImage = (project: (typeof projects)[number]) => {
+	const sourceFile = project.filePath?.replace(/\\/g, '/') ?? '';
+	const projectFolder =
+		sourceFile.match(/src\/content\/work\/([^/]+)\//)?.[1] ?? '';
+
+	const folderHero = Object.entries(heroImages).find(([path]) =>
+		path.includes(`/src/content/work/${projectFolder}/PHero.`),
+	)?.[1];
+
+	return (
+		folderHero ||
+		project.data.cardImage ||
+		project.data.img ||
+		'/assets/stock-1.jpg'
+	);
+};
+
+const projectTileImage = (project: (typeof projects)[number]) => {
+	const tileImage = project.data.tileImage?.trim();
+	if (!tileImage) return projectImage(project);
+
+	const sourceFile = project.filePath?.replace(/\\/g, '/') ?? '';
+	const projectFolder =
+		sourceFile.match(/src\/content\/work\/([^/]+)\//)?.[1] ?? '';
+
+	const normalizedTileImage = tileImage.replace(/^\.\//, '').replace(/^\//, '');
+	const expectedPath = `/src/content/work/${projectFolder}/${normalizedTileImage}`;
+
+	return projectImages[expectedPath] ?? projectImage(project);
+};
+
+const projectHref = (project: (typeof projects)[number]) =>
+	`/work/${project.data.slug ?? project.id}`;
+
+const DEFAULT_TILE_FILTER = '#a8a8a8';
+
+const projectTileFilter = (project: (typeof projects)[number]) =>
+	project.data.tileFilter ?? DEFAULT_TILE_FILTER;
+
+const projectTileL1 = (project: (typeof projects)[number]) =>
+	project.data.tileL1 ?? project.data.title;
+
+const projectTileL2 = (project: (typeof projects)[number]) =>
+	project.data.tileL2 ?? project.data.category ?? '';
+
 ---
 
 <BaseLayout
 	title="Paige Berry | Portfolio"
 	description="Student designer portfolio featuring recent work across identity, digital design, and art direction."
 >
-	<div class="page-shell stack gap-20">
+	<div
+		class="page-shell stack gap-20"
+		data-home-layout
+		data-default-view={homepageLayout.defaultView}
+		data-default-columns={homepageLayout.tileColumns}
+		data-default-filter-mode="colour"
+		data-show-controls={String(homepageLayout.showControls)}
+	>
+		{homepageLayout.showControls && (
+			<div class="layout-controls" aria-label="Homepage author layout controls">
+				<div class="control-pill" aria-label="Homepage layout">
+					<button
+						type="button"
+						data-layout-view="cards"
+						aria-pressed={homepageLayout.defaultView === 'cards' ? 'true' : 'false'}
+					>
+						Cards
+					</button>
+					<button
+						type="button"
+						data-layout-view="tiles"
+						aria-pressed={homepageLayout.defaultView === 'tiles' ? 'true' : 'false'}
+					>
+						Tiles
+					</button>
+				</div>
+
+				<div
+					class="control-pill column-controls"
+					data-column-controls
+					hidden={homepageLayout.defaultView !== 'tiles'}
+					aria-label="Tile columns"
+				>
+					{([2, 3, 4] as const).map((columns) => (
+						<button
+							type="button"
+							data-layout-columns={columns}
+							aria-pressed={homepageLayout.tileColumns === columns ? 'true' : 'false'}
+						>
+							{columns}
+						</button>
+					))}
+				</div>
+
+				<div
+					class="control-pill filter-controls"
+					data-filter-controls
+					hidden={homepageLayout.defaultView !== 'tiles'}
+					aria-label="Tile filter preview"
+				>
+					<button type="button" data-filter-mode="mono" aria-pressed="false">
+						Mono
+					</button>
+					<button type="button" data-filter-mode="colour" aria-pressed="true">
+						Colour
+					</button>
+				</div>
+			</div>
+		)}
+
 		<main class="wrapper stack gap-8">
 
-			<!-- Hero and introduction sit side-by-side on desktop -->
 			<div class="hero-row">
 				<Hero
 					title="Paige Berry"
 					tagline="Designer and visual storyteller creating clear, considered work across digital, brand, and editorial systems."
 					align="start"
 				/>
-
 			</div>
 
-			<section aria-label="Portfolio projects">
+			<section
+				class="portfolio-view cards-view"
+				data-home-view="cards"
+				aria-label="Portfolio projects"
+				hidden={homepageLayout.defaultView !== 'cards'}
+			>
 				<Grid variant="offset">
 					{projects.map((project) => (
 						<li>
@@ -38,20 +191,481 @@ const projects = (await getCollection('work')).sort(
 				</Grid>
 			</section>
 
+			<section
+				class="portfolio-view tiles-view"
+				data-home-view="tiles"
+				aria-label="Portfolio projects"
+				hidden={homepageLayout.defaultView !== 'tiles'}
+			>
+				<ul
+					class="project-tiles"
+					data-project-tiles
+					style={`--tile-columns: ${homepageLayout.tileColumns}`}
+				>
+					{projects.map((project) => (
+						<li>
+							<a
+								class="project-tile"
+								href={projectHref(project)}
+								style={`--tile-filter: ${projectTileFilter(project)}`}
+							>
+								<img
+									src={projectTileImage(project)}
+									alt={project.data.img_alt || project.data.title}
+									data-tile-image
+									loading="lazy"
+									decoding="async"
+								/>
+								<span class="tile-copy">
+									<span class="tile-line tile-line1">{projectTileL1(project)}</span>
+									{projectTileL2(project) && (
+										<span class="tile-line tile-line2">{projectTileL2(project)}</span>
+									)}
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+
 		</main>
 	</div>
 </BaseLayout>
+
+<script>
+	const initHomepageLayout = () => {
+		const root = document.querySelector<HTMLElement>('[data-home-layout]');
+		if (!root || root.dataset.enhanced === 'true') return;
+		root.dataset.enhanced = 'true';
+
+		const parseHex = (value: string) => {
+			const clean = value.trim().replace('#', '');
+			const expanded =
+				clean.length === 3
+					? clean.split('').map((char) => char + char).join('')
+					: clean;
+
+			if (!/^[0-9a-fA-F]{6}$/.test(expanded)) return null;
+
+			return {
+				r: parseInt(expanded.slice(0, 2), 16),
+				g: parseInt(expanded.slice(2, 4), 16),
+				b: parseInt(expanded.slice(4, 6), 16),
+			};
+		};
+
+		const luminance = (rgb: { r: number; g: number; b: number }) => {
+			const channels = [rgb.r, rgb.g, rgb.b].map((value) => {
+				const channel = value / 255;
+				return channel <= 0.04045
+					? channel / 12.92
+					: Math.pow((channel + 0.055) / 1.055, 2.4);
+			});
+
+			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+		};
+
+		const blend = (
+			base: { r: number; g: number; b: number },
+			overlay: { r: number; g: number; b: number },
+			alpha: number,
+		) => ({
+			r: base.r * (1 - alpha) + overlay.r * alpha,
+			g: base.g * (1 - alpha) + overlay.g * alpha,
+			b: base.b * (1 - alpha) + overlay.b * alpha,
+		});
+
+		const textFor = (background: { r: number; g: number; b: number }) =>
+			luminance(background) < 0.15 ? '#cccccc' : '#111';
+
+		const sampleBottomQuarter = (image: HTMLImageElement) => {
+			const canvas = document.createElement('canvas');
+			canvas.width = 24;
+			canvas.height = 6;
+
+			const context = canvas.getContext('2d', { willReadFrequently: true });
+			if (!context) return null;
+
+			try {
+				context.drawImage(
+					image,
+					0,
+					image.naturalHeight * 0.75,
+					image.naturalWidth,
+					image.naturalHeight * 0.25,
+					0,
+					0,
+					canvas.width,
+					canvas.height,
+				);
+
+				const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+				let r = 0;
+				let g = 0;
+				let b = 0;
+				let count = 0;
+
+				for (let index = 0; index < pixels.length; index += 4) {
+					if (pixels[index + 3] === 0) continue;
+					r += pixels[index];
+					g += pixels[index + 1];
+					b += pixels[index + 2];
+					count += 1;
+				}
+
+				return count
+					? { r: r / count, g: g / count, b: b / count }
+					: null;
+			} catch {
+				return null;
+			}
+		};
+
+		const updateTileContrast = (tile: HTMLElement) => {
+			const image = tile.querySelector<HTMLImageElement>('[data-tile-image]');
+			if (!image || !image.naturalWidth || !image.naturalHeight) return;
+
+			const sampled = sampleBottomQuarter(image);
+			if (!sampled) return;
+
+			const isMono = root.dataset.filterMode === 'mono';
+			const filterValue = isMono
+				? '#a8a8a8'
+				: getComputedStyle(tile).getPropertyValue('--tile-filter').trim() || '#a8a8a8';
+			const filter = parseHex(filterValue) ?? { r: 168, g: 168, b: 168 };
+
+			// Rest: image tint (58%) plus the persistent lower band (52%).
+			const restBackground = blend(blend(sampled, filter, 0.58), filter, 0.52);
+
+			// Hover: image tint dissolves; persistent lower band stays.
+			const hoverBackground = blend(sampled, filter, 0.52);
+
+			tile.style.setProperty('--tile-text-rest', textFor(restBackground));
+			tile.style.setProperty('--tile-text-hover', textFor(hoverBackground));
+		};
+
+		const updateAllTileContrast = () => {
+			root.querySelectorAll<HTMLElement>('.project-tile').forEach((tile) => {
+				const image = tile.querySelector<HTMLImageElement>('[data-tile-image]');
+				if (!image) return;
+
+				if (image.complete && image.naturalWidth) {
+					updateTileContrast(tile);
+				} else {
+					image.addEventListener('load', () => updateTileContrast(tile), { once: true });
+				}
+			});
+		};
+		const defaultView = root.dataset.defaultView === 'tiles' ? 'tiles' : 'cards';
+		const defaultColumns = Number(root.dataset.defaultColumns) || 3;
+		const defaultFilterMode =
+			root.dataset.defaultFilterMode === 'mono' ? 'mono' : 'colour';
+		const showControls = root.dataset.showControls === 'true';
+
+		const viewButtons = Array.from(
+			root.querySelectorAll<HTMLButtonElement>('[data-layout-view]'),
+		);
+		const columnButtons = Array.from(
+			root.querySelectorAll<HTMLButtonElement>('[data-layout-columns]'),
+		);
+		const columnControls =
+			root.querySelector<HTMLElement>('[data-column-controls]');
+		const filterControls =
+			root.querySelector<HTMLElement>('[data-filter-controls]');
+		const filterButtons = Array.from(
+			root.querySelectorAll<HTMLButtonElement>('[data-filter-mode]'),
+		);
+		const views = Array.from(
+			root.querySelectorAll<HTMLElement>('[data-home-view]'),
+		);
+		const tileGrid = root.querySelector<HTMLElement>('[data-project-tiles]');
+
+		const storageKey = 'stdport-homepage-layout';
+		const stored = showControls
+			? (() => {
+					try {
+						return JSON.parse(localStorage.getItem(storageKey) ?? '{}') as {
+							view?: string;
+							columns?: number;
+							filterMode?: string;
+						};
+					} catch {
+						return {};
+					}
+				})()
+			: {};
+
+		let view =
+			stored.view === 'tiles' || stored.view === 'cards'
+				? stored.view
+				: defaultView;
+
+		let columns =
+			stored.columns === 2 || stored.columns === 3 || stored.columns === 4
+				? stored.columns
+				: defaultColumns;
+
+		let filterMode =
+			stored.filterMode === 'mono' || stored.filterMode === 'colour'
+				? stored.filterMode
+				: defaultFilterMode;
+
+		const render = () => {
+			views.forEach((panel) => {
+				panel.hidden = panel.dataset.homeView !== view;
+			});
+
+			viewButtons.forEach((button) => {
+				button.setAttribute(
+					'aria-pressed',
+					String(button.dataset.layoutView === view),
+				);
+			});
+
+			if (columnControls) columnControls.hidden = view !== 'tiles';
+			if (filterControls) filterControls.hidden = view !== 'tiles';
+
+			columnButtons.forEach((button) => {
+				button.setAttribute(
+					'aria-pressed',
+					String(Number(button.dataset.layoutColumns) === columns),
+				);
+			});
+
+			filterButtons.forEach((button) => {
+				button.setAttribute(
+					'aria-pressed',
+					String(button.dataset.filterMode === filterMode),
+				);
+			});
+
+			root.dataset.filterMode = filterMode;
+			tileGrid?.style.setProperty('--tile-columns', String(columns));
+			requestAnimationFrame(updateAllTileContrast);
+
+			if (showControls) {
+				try {
+					localStorage.setItem(
+						storageKey,
+						JSON.stringify({ view, columns, filterMode }),
+					);
+				} catch {
+					// The authoring controls still work if storage is unavailable.
+				}
+			}
+		};
+
+		viewButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				view = button.dataset.layoutView === 'tiles' ? 'tiles' : 'cards';
+				render();
+			});
+		});
+
+		columnButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				const next = Number(button.dataset.layoutColumns);
+				if (next === 2 || next === 3 || next === 4) {
+					columns = next;
+					render();
+				}
+			});
+		});
+
+		filterButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				filterMode = button.dataset.filterMode === 'mono' ? 'mono' : 'colour';
+				render();
+			});
+		});
+
+		render();
+	};
+
+	const startHomepageLayout = () => {
+		initHomepageLayout();
+		requestAnimationFrame(initHomepageLayout);
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', startHomepageLayout, { once: true });
+	} else {
+		startHomepageLayout();
+	}
+
+	document.addEventListener('astro:page-load', startHomepageLayout);
+</script>
 
 <style>
 	.page-shell {
 		padding-block: 1rem 4rem;
 	}
 
-	/* Hero and contact introduction layout */
 	.hero-row {
 		display: grid;
 		gap: 2rem;
 	}
+
+	.layout-controls {
+		position: fixed;
+		top: 0.75rem;
+		right: 1rem;
+		/* Above the normal <nav> stacking layer so these fixed author controls
+		   are clickable before the page has scrolled past the nav box. */
+		z-index: 10001;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.5rem;
+	}
+
+	.control-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		padding: 0.2rem;
+		border: 1px solid var(--gray-800);
+		border-radius: 999rem;
+		background: color-mix(in srgb, var(--gray-999) 92%, transparent);
+		box-shadow: var(--shadow-sm);
+		backdrop-filter: blur(0.75rem);
+	}
+
+	.control-pill[hidden] {
+		display: none;
+	}
+
+	.control-pill button {
+		appearance: none;
+		border: 0;
+		border-radius: 999rem;
+		padding: 0.45rem 0.7rem;
+		background: transparent;
+		color: var(--gray-400);
+		font: inherit;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.control-pill button:hover,
+	.control-pill button:focus-visible {
+		color: var(--gray-0);
+		outline: none;
+	}
+
+	.control-pill button[aria-pressed='true'] {
+		background: var(--gray-700);
+		color: var(--gray-999);
+	}
+
+	.portfolio-view[hidden] {
+		display: none;
+	}
+
+	.project-tiles {
+		display: grid;
+		grid-template-columns: repeat(var(--tile-columns), minmax(0, 1fr));
+		gap: 1rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.project-tile {
+		position: relative;
+		display: block;
+		aspect-ratio: 1 / 1;
+		overflow: hidden;
+		border: 1px solid var(--gray-800);
+		border-radius: 1rem;
+		background: var(--gray-999);
+		color: inherit;
+		text-decoration: none;
+		isolation: isolate;
+	}
+
+	.project-tile img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 240ms ease;
+	}
+
+	/* One project colour, layered twice:
+	   a transparent full-image tint plus the same tint again over the lower quarter. */
+	.project-tile::before,
+	.project-tile::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		background: color-mix(in srgb, var(--tile-filter, #a8a8a8) 58%, transparent);
+		opacity: 1;
+		transition: opacity 220ms ease;
+	}
+
+	.project-tile::after {
+		inset: 75% 0 0;
+		background: color-mix(in srgb, var(--tile-filter, #a8a8a8) 52%, transparent);
+	}
+
+	[data-filter-mode='mono'] .project-tile::before,
+	[data-filter-mode='mono'] .project-tile::after {
+		background: color-mix(in srgb, #a8a8a8 58%, transparent);
+	}
+
+	[data-filter-mode='mono'] .project-tile::after {
+		background: color-mix(in srgb, #a8a8a8 52%, transparent);
+	}
+
+	/* Hover reveals the true image colour, but keeps the lower text band. */
+	.project-tile:hover::before,
+	.project-tile:focus-visible::before {
+		opacity: 0;
+	}
+
+	.project-tile:hover img,
+	.project-tile:focus-visible img {
+		transform: scale(1.015);
+	}
+
+	.project-tile:hover .tile-copy,
+	.project-tile:focus-visible .tile-copy {
+		color: var(--tile-text-hover, #111);
+	}
+
+	.tile-copy {
+		position: absolute;
+		inset: auto 0 0;
+		z-index: 2;
+		min-height: 25%;
+		display: grid;
+		align-content: center;
+		gap: 0.15rem;
+		padding: 0.75rem 0.9rem;
+		color: var(--tile-text-rest, #111);
+		transition: color 160ms ease;
+		text-align: center;
+		pointer-events: none;
+	}
+
+	.tile-line {
+		display: block;
+		line-height: 1.15;
+	}
+
+	.tile-line1 {
+		font-weight: 700;
+	}
+
+	.tile-line2 {
+		font-size: 0.82rem;
+	}
+
 
 	.intro-grid {
 		display: grid;
@@ -78,7 +692,33 @@ const projects = (await getCollection('work')).sort(
 		text-decoration: none;
 	}
 
-	/* Side-by-side hero layout on larger screens */
+	@media (prefers-reduced-motion: reduce) {
+		.project-tile img,
+		.project-tile::before,
+		.project-tile::after {
+			transition: none;
+		}
+	}
+
+	@media (max-width: 49.99em) {
+		.layout-controls {
+			top: auto;
+			right: 0.75rem;
+			bottom: 0.75rem;
+			flex-wrap: wrap;
+		}
+
+		.project-tiles {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 34em) {
+		.project-tiles {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	@media (min-width: 50em) {
 		.hero-row {
 			grid-template-columns: minmax(0, 1fr) minmax(28rem, 1fr);

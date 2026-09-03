@@ -8,6 +8,10 @@ tags:
   - Motion Graphics
   - Typography
   - Sound Design
+
+tileFilter: "#e0aa4d"
+tileL1: "Motion Graphics"
+tileL2: "20-second motion graphics title sequence"
 ---
 
 # Motion Graphic Design

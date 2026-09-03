@@ -9,6 +9,10 @@ tags:
   - Workflow
   - Methodology
   - Collaboration
+tileFilter: "#27275a"
+# tileImage: "A1T.jpg"  
+tileL1: "P2 AIFF"
+tileL2: "AI Friend or Foe"
 ---
 
 # AI: Friend, Foe or Waste of Time?

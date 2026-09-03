@@ -9,6 +9,10 @@ tags:
   - AI
   - Collaboration
   - Development
+tileFilter: "#5e7bb0"
+# tileImage: "A1T.jpg"  
+tileL1: "P9 Workflow"
+tileL2: "Kontrolle, Vertrauen - a state of immediate usefulness"
 ---
 
 # Human and GPT Workflow

@@ -9,6 +9,9 @@ tags:
   - Commands
   - Context
   - Workflow
+tileFilter: "#5e7bb0"
+tileL1: "Project Awareness"
+tileL2: "The prompt that tells AI how to help"
 ---
 
 # Project Awareness Prompt

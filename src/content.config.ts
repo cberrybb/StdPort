@@ -26,6 +26,14 @@ export const collections = {
 			cardImage: z.string().optional(),
 			heroImage: z.string().optional(),
 
+			// Homepage tile presentation. All are optional:
+			// tileImage names an authored crop in this project's own folder.
+			// Missing image/filter/text values fall back safely in index.astro.
+			tileImage: z.string().optional(),
+			tileFilter: z.string().optional(),
+			tileL1: z.string().optional(),
+			tileL2: z.string().optional(),
+
 			gallery: z
 				.record(
 					z.string(),

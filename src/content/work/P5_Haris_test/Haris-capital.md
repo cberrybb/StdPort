@@ -1,32 +1,38 @@
 ---
+title: "Haris Capital"
 description: |
   An ongoing design relationship spanning web, print, presentations and
   events. Creating a flexible visual language across very different
   formats and audiences.
 
-gallery:
-  A:
-    title: Sailing day trips
-    tiles:
-      1:
-        line1: Image thumnail title
-        line2: Text B line
-      2:
-        line1: Test line one
-        line2: Test line two
-  B: Sunset Sailing
-  C: A flexible identity
-
-# Project hero override. Rename PHero.png (e.g. PHero._ng) to disable the automatic folder hero and activate this selection.
-
-heroImage: A1.png
-img_alt: Foundation Capital presentation and event design
 publishDate: "2025-03-02 00:00:00"
+
 tags:
   - MEditorial
   - Print
   - Presentation
-title: Haris Capital
+
+heroImage: "A1.png"
+img_alt: "Foundation Capital presentation and event design"
+
+# Homepage tile
+tileImage: "A1T.png"
+tileFilter: "#5e7bb0"
+tileL1: "Haris Capital"
+tileL2: "A flexible identity"
+
+gallery:
+  A:
+    title: "Sailing day trips"
+    tiles:
+      1:
+        line1: "Image thumbnail title"
+        line2: "Text B line"
+      2:
+        line1: "Test line one"
+        line2: "Test line two"
+  B: "Sunset Sailing"
+  C: "A flexible identity"
 ---
 
 ## Haris Capital

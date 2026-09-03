@@ -9,6 +9,10 @@ tags:
   - Design
   - Systems
   - AI
+tileFilter: "#e7eeba"
+# tileImage: "A1T.jpg"  
+tileL1: "P8 How to Onboard"
+tileL2: "Fast, low overhead, low data volume, wash, rinse repeat"
 ---
 
 # Fast Value, Low Effort
