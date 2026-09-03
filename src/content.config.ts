@@ -48,4 +48,16 @@ export const collections = {
 				.optional(),
 		}),
 	}),
+
+	Perm: defineCollection({
+		loader: glob({
+			base: './src/content/Perm',
+			pattern: '**/*.md',
+		}),
+
+		schema: z.object({
+			title: z.string(),
+			description: z.string(),
+		}),
+	}),
 };

@@ -1,9 +1,8 @@
 ---
-import Icon from './Icon.astro';
-
 const textLinks: { label: string; href: string }[] = [
 	{ label: 'Home', href: '/' },
-	{ label: 'About Me', href: '/contact/' },
+	{ label: 'About', href: '/about/' },
+	{ label: 'Contact me', href: '/contact/' },
 ];
 
 const isCurrentPage = (href: string) => {
@@ -14,126 +13,165 @@ const isCurrentPage = (href: string) => {
 };
 ---
 
-<nav>
-	<div class="menu-header">
-		<a href="/" class="site-logo" aria-label="Paige Berry home">
-			<span class="print-stage" aria-hidden="true">
-
-				<!-- Positive impression -->
-				<span class="impression">
-					<img src="/assets/PBLogo.jpg" alt="" />
-				</span>
-
-				<!-- Moving printing block -->
-				<span class="type-block">
-					<img src="/assets/PBLogo.jpg" alt="" />
-				</span>
-
+<nav aria-label="Primary navigation">
+	<a href="/" class="site-logo" aria-label="Paige Berry home">
+		<span class="print-stage" aria-hidden="true">
+			<span class="impression">
+				<img src="/assets/PBLogo.jpg" alt="" />
 			</span>
-		</a>
 
-		<menu-button>
-			<template>
-				<button class="menu-button" aria-expanded="false">
-					<span class="sr-only">Menu</span>
-					<Icon icon="list" />
-				</button>
-			</template>
-		</menu-button>
-	</div>
+			<span class="type-block">
+				<img src="/assets/PBLogo.jpg" alt="" />
+			</span>
+		</span>
+	</a>
 
-	<noscript>
-		<ul class="nav-items">
-			{
-				textLinks.map(({ label, href }) => (
-					<li>
-						<a
-							aria-current={isCurrentPage(href) ? 'page' : null}
-							class="link"
-							href={href}
-						>
-							{label}
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</noscript>
+	<ul class="nav-items">
+		{
+			textLinks.map(({ label, href }) => (
+				<li>
+					<a
+						aria-current={isCurrentPage(href) ? 'page' : null}
+						class="link"
+						href={href}
+					>
+						{label}
+					</a>
+				</li>
+			))
+		}
 
-	<div id="menu-content" hidden>
-		<ul class="nav-items">
-			{
-				textLinks.map(({ label, href }) => (
-					<li>
-						<a
-							aria-current={isCurrentPage(href) ? 'page' : null}
-							class="link"
-							href={href}
-						>
-							{label}
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</div>
+		<li class="doc-nav-item" hidden>
+			<button class="link prev-title-link" type="button">Prev title</button>
+		</li>
+		<li class="doc-nav-item" hidden>
+			<button class="link next-title-link" type="button">Next title</button>
+		</li>
+		<li class="top-item" hidden>
+			<button class="link top-link" type="button">Top</button>
+		</li>
+	</ul>
 </nav>
 
 <script>
-	class MenuButton extends HTMLElement {
-		constructor() {
-			super();
+	const initPersistentNav = () => {
+		const nav = document.querySelector<HTMLElement>('.nav-items');
+		const topItem = document.querySelector<HTMLElement>('.top-item');
+		const topButton = document.querySelector<HTMLButtonElement>('.top-link');
+		const docNavItems = Array.from(
+			document.querySelectorAll<HTMLElement>('.doc-nav-item'),
+		);
+		const prevButton =
+			document.querySelector<HTMLButtonElement>('.prev-title-link');
+		const nextButton =
+			document.querySelector<HTMLButtonElement>('.next-title-link');
 
-			this.appendChild(
-				this.querySelector('template')!.content.cloneNode(true)
-			);
+		if (!nav || !topItem || !topButton || !prevButton || !nextButton) return;
+		if (nav.dataset.enhanced === 'true') return;
+		nav.dataset.enhanced = 'true';
 
-			const btn = this.querySelector('button')!;
-			const menu = document.getElementById('menu-content')!;
+		// Treat Markdown #, ## and ### headings as navigable document titles.
+		// Numbered headings are included automatically because their visible
+		// numbering is simply part of the heading text.
+		const headings = Array.from(
+			document.querySelectorAll<HTMLElement>(
+				'.project-content h1, .project-content h2, .project-content h3, ' +
+				'.permanent-page h1, .permanent-page h2, .permanent-page h3',
+			),
+		).filter((heading, index, all) => all.indexOf(heading) === index);
 
-			menu.hidden = true;
-			menu.classList.add('menu-content');
+		const hasDocumentNavigation = headings.length >= 4;
 
-			const setExpanded = (expand: boolean) => {
-				btn.setAttribute('aria-expanded', expand ? 'true' : 'false');
-				menu.hidden = !expand;
-			};
-
-			btn.addEventListener('click', () => {
-				setExpanded(menu.hidden === true);
-			});
-
-			const handleViewports = (
-				e: MediaQueryList | MediaQueryListEvent
-			) => {
-				setExpanded(e.matches);
-				btn.hidden = e.matches;
-			};
-
-			const mediaQueries = window.matchMedia('(min-width: 50em)');
-
-			handleViewports(mediaQueries);
-			mediaQueries.addEventListener('change', handleViewports);
+		for (const item of docNavItems) {
+			item.hidden = !hasDocumentNavigation;
 		}
-	}
 
-	customElements.define('menu-button', MenuButton);
+		const reducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)',
+		);
+
+		const scrollToElement = (element: HTMLElement) => {
+			const targetTop =
+				window.scrollY +
+				element.getBoundingClientRect().top -
+				window.innerHeight * 0.25;
+
+			window.scrollTo({
+				top: Math.max(0, targetTop),
+				behavior: reducedMotion.matches ? 'auto' : 'smooth',
+			});
+		};
+
+		const getCurrentHeadingIndex = () => {
+			// Match the navigation landing position: a heading is considered
+			// current once it reaches roughly one quarter of the viewport.
+			const threshold = window.innerHeight * 0.25 + 8;
+			let current = -1;
+
+			for (let index = 0; index < headings.length; index += 1) {
+				if (headings[index].getBoundingClientRect().top <= threshold) {
+					current = index;
+				} else {
+					break;
+				}
+			}
+
+			return current;
+		};
+
+		const updateControls = () => {
+			topItem.hidden = window.scrollY < 120;
+
+			if (!hasDocumentNavigation) return;
+
+			const current = getCurrentHeadingIndex();
+			const previousIndex = current - 1;
+			const nextIndex = current + 1;
+
+			prevButton.disabled = previousIndex < 0;
+			nextButton.disabled = nextIndex >= headings.length;
+		};
+
+		prevButton.addEventListener('click', () => {
+			const current = getCurrentHeadingIndex();
+			const target = current - 1;
+
+			if (target >= 0) {
+				scrollToElement(headings[target]);
+			}
+		});
+
+		nextButton.addEventListener('click', () => {
+			const current = getCurrentHeadingIndex();
+			const target = current + 1;
+
+			if (target < headings.length) {
+				scrollToElement(headings[target]);
+			}
+		});
+
+		topButton.addEventListener('click', () => {
+			window.scrollTo({
+				top: 0,
+				behavior: reducedMotion.matches ? 'auto' : 'smooth',
+			});
+		});
+
+		updateControls();
+		window.addEventListener('scroll', updateControls, { passive: true });
+	};
+
+	initPersistentNav();
+	document.addEventListener('astro:page-load', initPersistentNav);
 </script>
 
 <style>
 	nav {
-		z-index: 9999;
 		position: relative;
+		z-index: 9999;
 		font-family: var(--font-brand);
 		font-weight: 500;
 		margin-bottom: 3.5rem;
-	}
-
-	.menu-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 0.5rem;
 		padding: 1.5rem;
 	}
 
@@ -168,7 +206,6 @@ const isCurrentPage = (href: string) => {
 		transform-origin: center;
 	}
 
-	/* Original positive print appears here */
 	.impression {
 		left: 3.1rem;
 		z-index: 1;
@@ -183,18 +220,6 @@ const isCurrentPage = (href: string) => {
 		object-fit: contain;
 	}
 
-	/*
-		SEQUENCE
-
-		1. Original block slides right
-		2. Block reaches print position
-		3. Positive impression appears
-		4. Block withdraws left
-		5. While withdrawing it flips through its edge
-		6. Reverse face becomes mirrored + inverted
-		7. Reverse block arrives back on left
-	*/
-
 	.site-logo:hover .type-block,
 	.site-logo:focus-visible .type-block {
 		animation: block-print 2.1s ease-in-out forwards;
@@ -205,152 +230,91 @@ const isCurrentPage = (href: string) => {
 		animation: impression-print 2.1s ease-out forwards;
 	}
 
-	/* ---------- BLOCK ---------- */
-
 	@keyframes block-print {
-
-		/* Original block */
 		0% {
-			transform:
-				translateX(0)
-				scaleX(1);
-
+			transform: translateX(0) scaleX(1);
 			filter: none;
 		}
 
-		/* Slide right */
 		35% {
-			transform:
-				translateX(1.6rem)
-				scaleX(1);
-
+			transform: translateX(1.6rem) scaleX(1);
 			filter: none;
 		}
 
-		/* Reach print position */
-		55% {
-			transform:
-				translateX(3.1rem)
-				scaleX(1);
-
-			filter: none;
-		}
-
-		/* Brief contact */
+		55%,
 		62% {
-			transform:
-				translateX(3.1rem)
-				scaleX(1);
-
+			transform: translateX(3.1rem) scaleX(1);
 			filter: none;
 		}
 
-		/*
-			Withdraw and begin flipping.
-			The print is now being revealed.
-		*/
 		72% {
-			transform:
-				translateX(2.2rem)
-				scaleX(0.45);
-
+			transform: translateX(2.2rem) scaleX(0.45);
 			filter: none;
 		}
 
-		/* Almost edge-on */
 		78% {
-			transform:
-				translateX(1.6rem)
-				scaleX(0.04);
-
+			transform: translateX(1.6rem) scaleX(0.04);
 			filter: none;
 		}
 
-		/*
-			Cross the edge.
-			Reverse face becomes inverted here.
-		*/
 		79% {
-			transform:
-				translateX(1.5rem)
-				scaleX(-0.04);
-
+			transform: translateX(1.5rem) scaleX(-0.04);
 			filter: invert(1);
 		}
 
-		/* Mirrored reverse face opens */
 		88% {
-			transform:
-				translateX(0.7rem)
-				scaleX(-0.65);
-
+			transform: translateX(0.7rem) scaleX(-0.65);
 			filter: invert(1);
 		}
 
-		/*
-			Final state:
-			mirrored + inverted block on left.
-		*/
 		100% {
-			transform:
-				translateX(0)
-				scaleX(-1);
-
+			transform: translateX(0) scaleX(-1);
 			filter: invert(1);
 		}
 	}
 
-	/* ---------- PRINT ---------- */
-
 	@keyframes impression-print {
-
 		0%,
 		57% {
 			opacity: 0;
 		}
 
-		/* Block begins lifting away */
 		63% {
 			opacity: 0.25;
 		}
 
-		/* Print is revealed */
-		70% {
-			opacity: 1;
-		}
-
-		/* Positive print remains */
+		70%,
 		100% {
 			opacity: 1;
 		}
 	}
 
 	/* =========================================
-	   MENU
+	   PERSISTENT NAVIGATION PILLS
 	   ========================================= */
 
-	.menu-button {
-		position: relative;
+	.nav-items {
+		position: fixed;
+		top: 0.75rem;
+		left: 13.75vw;
+		right: auto;
+		z-index: 10000;
 		display: flex;
-		border: 0;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.25rem;
+		margin: 0;
+		padding: 0.5rem 0.5625rem;
+		list-style: none;
+		font-size: var(--text-sm);
+		line-height: 1.2;
+		border: 1px solid var(--gray-800);
 		border-radius: 999rem;
-		padding: 0.5rem;
-		font-size: 1.5rem;
-		color: var(--gray-300);
 		background: var(--gray-999);
 		box-shadow: var(--shadow-md);
 	}
 
-	.menu-button[aria-expanded='true'] {
-		color: var(--gray-0);
-		background: var(--gray-900);
-	}
-
-	.menu-button[hidden] {
-		display: none;
-	}
-
-	.menu-button::before {
+	.nav-items::before {
 		position: absolute;
 		inset: -1px;
 		content: '';
@@ -359,97 +323,68 @@ const isCurrentPage = (href: string) => {
 		z-index: -1;
 	}
 
-	.menu-content {
-		position: absolute;
-		left: 0;
-		right: 0;
-	}
-
-	.nav-items {
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		font-size: var(--text-md);
-		line-height: 1.2;
-		list-style: none;
-		padding: 2rem;
-		background-color: var(--gray-999);
-		border-bottom: 1px solid var(--gray-800);
+	.top-item[hidden],
+	.doc-nav-item[hidden] {
+		display: none;
 	}
 
 	.link {
 		display: inline-block;
+		padding: 0.5rem 1rem;
+		border: 0;
+		border-radius: 999rem;
 		color: var(--gray-300);
+		background: transparent;
+		font: inherit;
+		line-height: inherit;
 		text-decoration: none;
+		cursor: pointer;
+		transition:
+			color var(--theme-transition),
+			background-color var(--theme-transition);
 	}
 
-	.link[aria-current] {
+	.link:hover,
+	.link:focus-visible {
 		color: var(--gray-0);
+		background-color: var(--gray-50);
+		outline: none;
 	}
 
-	/* =========================================
-	   DESKTOP
-	   ========================================= */
+	.link:disabled {
+		color: var(--gray-500);
+		background: transparent;
+		cursor: default;
+		opacity: 0.5;
+	}
+
+	.link[aria-current='page'] {
+		color: var(--gray-999);
+		background-color: var(--gray-700);
+	}
 
 	@media (min-width: 50em) {
 		nav {
-			display: grid;
-			grid-template-columns: 1fr auto 1fr;
-			align-items: center;
 			padding: 2.5rem 5rem;
-			gap: 1rem;
-		}
-
-		.menu-header {
-			padding: 0;
-		}
-
-		.menu-content {
-			display: contents;
 		}
 
 		.nav-items {
-			position: relative;
-			flex-direction: row;
-			font-size: var(--text-sm);
-			border-radius: 999rem;
-			border: 1px solid var(--gray-800);
-			padding: 0.5rem 0.5625rem;
-			background: var(--gray-999);
-			box-shadow: var(--shadow-md);
-		}
-
-		.nav-items::before {
-			position: absolute;
-			inset: -1px;
-			content: '';
-			background: var(--gray-800);
-			border-radius: 999rem;
-			z-index: -1;
-		}
-
-		.link {
-			padding: 0.5rem 1rem;
-			border-radius: 999rem;
-			transition:
-				color var(--theme-transition),
-				background-color var(--theme-transition);
-		}
-
-		.link:hover,
-		.link:focus {
-			color: var(--gray-0);
-			background-color: var(--gray-50);
-		}
-
-		.link[aria-current='page'] {
-			color: var(--gray-999);
-			background-color: var(--gray-700);
+			top: 0.75rem;
 		}
 	}
 
-	/* ---------- ACCESSIBILITY ---------- */
+	@media (max-width: 49.99em) {
+		.nav-items {
+			top: 0.75rem;
+			left: 5rem;
+			width: max-content;
+			max-width: calc(100% - 3rem);
+		}
+
+		.link {
+			padding-inline: 0.75rem;
+		}
+	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.site-logo:hover .type-block,

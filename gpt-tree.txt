@@ -1,0 +1,227 @@
+.gitignore                                                                              264 .gitignore
+AGENTS.md                                                                               874 .md
+astro.config.mjs                                                                        122 .mjs
+CLAUDE.md                                                                               874 .md
+package-lock.json                                                                    150911 .json
+package.json                                                                            334 .json
+README.md                                                                              1674 .md
+status.diff                                                                           28559 .diff
+tsconfig.json                                                                           109 .json
+.vscode\extensions.json                                                                  87 .json
+.vscode\launch.json                                                                     207 .json
+archive for gpt\content.config.ts                                                       731 .ts
+archive for gpt\assets\at-work.jpg                                                   100769 .jpg
+archive for gpt\assets\portrait.jpg                                                  131394 .jpg
+archive for gpt\assets\stock-1.jpg                                                    39459 .jpg
+archive for gpt\assets\stock-2.jpg                                                    20120 .jpg
+archive for gpt\assets\stock-3.jpg                                                    21810 .jpg
+archive for gpt\assets\stock-4.jpg                                                    27864 .jpg
+archive for gpt\assets\backgrounds\bg-footer-dark-1440w.jpg                           15589 .jpg
+archive for gpt\assets\backgrounds\bg-footer-dark-800w.jpg                             6360 .jpg
+archive for gpt\assets\backgrounds\bg-footer-light-1440w.jpg                          12614 .jpg
+archive for gpt\assets\backgrounds\bg-footer-light-800w.jpg                            4735 .jpg
+archive for gpt\assets\backgrounds\bg-main-dark-1440w.jpg                             28973 .jpg
+archive for gpt\assets\backgrounds\bg-main-dark-800w.jpg                              12727 .jpg
+archive for gpt\assets\backgrounds\bg-main-dark.svg                                    1197 .svg
+archive for gpt\assets\backgrounds\bg-main-light-1440w.jpg                            21502 .jpg
+archive for gpt\assets\backgrounds\bg-main-light-800w.jpg                             14098 .jpg
+archive for gpt\assets\backgrounds\bg-main-light.svg                                   1148 .svg
+archive for gpt\assets\backgrounds\bg-subtle-1-dark-1440w.jpg                         21122 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-1-dark-800w.jpg                           6710 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-1-light-1440w.jpg                        15807 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-1-light-800w.jpg                          6340 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-2-dark-1440w.jpg                         16804 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-2-dark-800w.jpg                           7519 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-2-light-1440w.jpg                        14445 .jpg
+archive for gpt\assets\backgrounds\bg-subtle-2-light-800w.jpg                          5420 .jpg
+archive for gpt\assets\backgrounds\noise.png                                          27223 .png
+archive for gpt\components\CallToAction.astro                                           934 .astro
+archive for gpt\components\ContactCTA.astro                                             855 .astro
+archive for gpt\components\Footer.astro                                                1115 .astro
+archive for gpt\components\Grid.astro                                                  1220 .astro
+archive for gpt\components\Hero.astro                                                   830 .astro
+archive for gpt\components\Icon.astro                                                  1197 .astro
+archive for gpt\components\IconPaths.ts                                                9032 .ts
+archive for gpt\components\MainHead.astro                                               948 .astro
+archive for gpt\components\Nav.astro                                                   8162 .astro
+archive for gpt\components\Pill.astro                                                   325 .astro
+archive for gpt\components\PortfolioPreview.astro                                      1192 .astro
+archive for gpt\components\ProjectCard.astro                                           2507 .astro
+archive for gpt\components\ProjectExplorer.astro                                       7087 .astro
+archive for gpt\components\Skills.astro                                                1351 .astro
+archive for gpt\components\ThemeToggle.astro                                           2029 .astro
+archive for gpt\content\work\bloom-box.md                                              3354 .md
+archive for gpt\content\work\h20.md                                                    3277 .md
+archive for gpt\content\work\markdown-mystery-tour.md                                  2450 .md
+archive for gpt\content\work\nested\duvet-genius.md                                    3263 .md
+archive for gpt\content\work\P1_advanced\A1.png                                      126927 .png
+archive for gpt\content\work\P1_advanced\A2.png                                      179001 .png
+archive for gpt\content\work\P1_advanced\A3.png                                      159826 .png
+archive for gpt\content\work\P1_advanced\A4.png                                      126927 .png
+archive for gpt\content\work\P1_advanced\A5.png                                      126927 .png
+archive for gpt\content\work\P1_advanced\B1.png                                      151490 .png
+archive for gpt\content\work\P1_advanced\B2.png                                      155938 .png
+archive for gpt\content\work\P1_advanced\B3.png                                      123245 .png
+archive for gpt\content\work\P1_advanced\C1.png                                      149595 .png
+archive for gpt\content\work\P1_advanced\C2.png                                      172236 .png
+archive for gpt\content\work\P1_advanced\C3.png                                      204976 .png
+archive for gpt\content\work\P1_advanced\foundation-capital.md                         2555 .md
+archive for gpt\content\work\P1_advanced\PHero.png                                  1802850 .png
+archive for gpt\layouts\BaseLayout.astro                                                707 .astro
+archive for gpt\pages\404.astro                                                         258 .astro
+archive for gpt\pages\about.astro                                                      3023 .astro
+archive for gpt\pages\contact.astro                                                    1786 .astro
+archive for gpt\pages\index.astro                                                      2145 .astro
+archive for gpt\pages\work.astro                                                         36 .astro
+archive for gpt\pages\work\[...slug].astro                                             3863 .astro
+archive for gpt\styles\global.css                                                      3891 .css
+public\favicon.ico                                                                      655 .ico
+public\favicon.svg                                                                      749 .svg
+public\assets\at-work.jpg                                                            100769 .jpg
+public\assets\PBLogo.jpg                                                              27124 .jpg
+public\assets\portrait.jpg                                                           131394 .jpg
+public\assets\stock-1.jpg                                                             39459 .jpg
+public\assets\stock-2.jpg                                                             20120 .jpg
+public\assets\stock-3.jpg                                                             21810 .jpg
+public\assets\stock-4.jpg                                                             27864 .jpg
+public\assets\backgrounds\bg-footer-dark-1440w.jpg                                    15589 .jpg
+public\assets\backgrounds\bg-footer-dark-800w.jpg                                      6360 .jpg
+public\assets\backgrounds\bg-footer-light-1440w.jpg                                   12614 .jpg
+public\assets\backgrounds\bg-footer-light-800w.jpg                                     4735 .jpg
+public\assets\backgrounds\bg-main-dark-1440w.jpg                                      28973 .jpg
+public\assets\backgrounds\bg-main-dark-800w.jpg                                       12727 .jpg
+public\assets\backgrounds\bg-main-dark.svg                                             1197 .svg
+public\assets\backgrounds\bg-main-light-1440w.jpg                                     21502 .jpg
+public\assets\backgrounds\bg-main-light-800w.jpg                                      14098 .jpg
+public\assets\backgrounds\bg-main-light.svg                                            1148 .svg
+public\assets\backgrounds\bg-subtle-1-dark-1440w.jpg                                  21122 .jpg
+public\assets\backgrounds\bg-subtle-1-dark-800w.jpg                                    6710 .jpg
+public\assets\backgrounds\bg-subtle-1-light-1440w.jpg                                 15807 .jpg
+public\assets\backgrounds\bg-subtle-1-light-800w.jpg                                   6340 .jpg
+public\assets\backgrounds\bg-subtle-2-dark-1440w.jpg                                  16804 .jpg
+public\assets\backgrounds\bg-subtle-2-dark-800w.jpg                                    7519 .jpg
+public\assets\backgrounds\bg-subtle-2-light-1440w.jpg                                 14445 .jpg
+public\assets\backgrounds\bg-subtle-2-light-800w.jpg                                   5420 .jpg
+public\assets\backgrounds\noise.png                                                   27223 .png
+src\content.config.ts                                                                  1037 .ts
+src\assets\at-work.jpg                                                               100769 .jpg
+src\assets\portrait.jpg                                                              131394 .jpg
+src\assets\stock-1.jpg                                                                39459 .jpg
+src\assets\stock-2.jpg                                                                20120 .jpg
+src\assets\stock-3.jpg                                                                21810 .jpg
+src\assets\stock-4.jpg                                                                27864 .jpg
+src\assets\backgrounds\bg-footer-dark-1440w.jpg                                       15589 .jpg
+src\assets\backgrounds\bg-footer-dark-800w.jpg                                         6360 .jpg
+src\assets\backgrounds\bg-footer-light-1440w.jpg                                      12614 .jpg
+src\assets\backgrounds\bg-footer-light-800w.jpg                                        4735 .jpg
+src\assets\backgrounds\bg-main-dark-1440w.jpg                                         28973 .jpg
+src\assets\backgrounds\bg-main-dark-800w.jpg                                          12727 .jpg
+src\assets\backgrounds\bg-main-dark.svg                                                1197 .svg
+src\assets\backgrounds\bg-main-light-1440w.jpg                                        21502 .jpg
+src\assets\backgrounds\bg-main-light-800w.jpg                                         14098 .jpg
+src\assets\backgrounds\bg-main-light.svg                                               1148 .svg
+src\assets\backgrounds\bg-subtle-1-dark-1440w.jpg                                     21122 .jpg
+src\assets\backgrounds\bg-subtle-1-dark-800w.jpg                                       6710 .jpg
+src\assets\backgrounds\bg-subtle-1-light-1440w.jpg                                    15807 .jpg
+src\assets\backgrounds\bg-subtle-1-light-800w.jpg                                      6340 .jpg
+src\assets\backgrounds\bg-subtle-2-dark-1440w.jpg                                     16804 .jpg
+src\assets\backgrounds\bg-subtle-2-dark-800w.jpg                                       7519 .jpg
+src\assets\backgrounds\bg-subtle-2-light-1440w.jpg                                    14445 .jpg
+src\assets\backgrounds\bg-subtle-2-light-800w.jpg                                      5420 .jpg
+src\assets\backgrounds\noise.png                                                      27223 .png
+src\components\CallToAction.astro                                                       934 .astro
+src\components\ContactCTA.astro                                                         855 .astro
+src\components\Footer.astro                                                            1115 .astro
+src\components\Grid.astro                                                              1220 .astro
+src\components\Hero.astro                                                               830 .astro
+src\components\Icon.astro                                                              1197 .astro
+src\components\IconPaths.ts                                                            9032 .ts
+src\components\MainHead.astro                                                           948 .astro
+src\components\Nav.astro                                                               8162 .astro
+src\components\Pill.astro                                                               325 .astro
+src\components\PortfolioPreview.astro                                                  1192 .astro
+src\components\ProjectCard.astro                                                       2507 .astro
+src\components\Skills.astro                                                            1351 .astro
+src\components\ThemeToggle.astro                                                       2029 .astro
+src\components\gallery\gallery.ts                                                      4047 .ts
+src\components\gallery\ProjectExplorer.astro                                           5948 .astro
+src\components\gallery\RowGallery.astro                                                8166 .astro
+src\components\gallery\StandardGallery.astro                                           6163 .astro
+src\components\gallery\TileGallery.astro                                               9427 .astro
+src\content\work\bloom-box.md                                                          3354 .md
+src\content\work\h20.md                                                                3277 .md
+src\content\work\markdown-mystery-tour.md                                              2450 .md
+src\content\work\D10_DaPlan\D10_DaPlan.md                                             10345 .md
+src\content\work\D9 Project Awareness\D9_Project_Awareness_Prompt.md                  25975 .md
+src\content\work\E10_editorial\editorial-design.md                                     1462 .md
+src\content\work\E20_information\information-design.md                                 1357 .md
+src\content\work\E30_Motiongraphics\motion-graphic-design.md                           1044 .md
+src\content\work\E40_Hypergraphics\hypergraphics.md                                     925 .md
+src\content\work\E50_UXDesign\user-experience-design.md                                1057 .md
+src\content\work\nested\duvet-genius.md                                                3263 .md
+src\content\work\P0 Inception\P0_Inception.md                                         15751 .md
+src\content\work\P1_Sketch\A1.png                                                    126927 .png
+src\content\work\P1_Sketch\A2.png                                                    179001 .png
+src\content\work\P1_Sketch\A3.png                                                    159826 .png
+src\content\work\P1_Sketch\A4.png                                                    126927 .png
+src\content\work\P1_Sketch\A5.png                                                    126927 .png
+src\content\work\P1_Sketch\B1.png                                                    151490 .png
+src\content\work\P1_Sketch\B2.png                                                    155938 .png
+src\content\work\P1_Sketch\B3.png                                                    123245 .png
+src\content\work\P1_Sketch\C1.png                                                    149595 .png
+src\content\work\P1_Sketch\C2.png                                                    172236 .png
+src\content\work\P1_Sketch\C3.png                                                    204976 .png
+src\content\work\P1_Sketch\descartes-notes-on-a-recursive-project.md                  10275 .md
+src\content\work\P1_Sketch\PHero.png                                                1802850 .png
+src\content\work\P2_ AI Friend or Foe\A1.png                                         126927 .png
+src\content\work\P2_ AI Friend or Foe\A2.png                                         179001 .png
+src\content\work\P2_ AI Friend or Foe\A3.png                                         159826 .png
+src\content\work\P2_ AI Friend or Foe\A4.png                                         126927 .png
+src\content\work\P2_ AI Friend or Foe\A5.png                                         126927 .png
+src\content\work\P2_ AI Friend or Foe\ai-friend-foe-or-waste-of-time.md                7244 .md
+src\content\work\P2_ AI Friend or Foe\B1.png                                         151490 .png
+src\content\work\P2_ AI Friend or Foe\B2.png                                         155938 .png
+src\content\work\P2_ AI Friend or Foe\B3.png                                         123245 .png
+src\content\work\P2_ AI Friend or Foe\C1.png                                         149595 .png
+src\content\work\P2_ AI Friend or Foe\C2.png                                         172236 .png
+src\content\work\P2_ AI Friend or Foe\C3.png                                         204976 .png
+src\content\work\P2_ AI Friend or Foe\PHero.png                                     1802850 .png
+src\content\work\P2_newtest\A1.png                                                   126927 .png
+src\content\work\P2_newtest\A2.png                                                   179001 .png
+src\content\work\P2_newtest\A3.png                                                   159826 .png
+src\content\work\P2_newtest\A4.png                                                   126927 .png
+src\content\work\P2_newtest\B1.png                                                   151490 .png
+src\content\work\P2_newtest\B2.png                                                   155938 .png
+src\content\work\P2_newtest\B3.png                                                   123245 .png
+src\content\work\P2_newtest\C1.png                                                   149595 .png
+src\content\work\P2_newtest\C2.png                                                   172236 .png
+src\content\work\P2_newtest\C3.png                                                   204976 .png
+src\content\work\P2_newtest\P2 Newtest.md                                              2296 .md
+src\content\work\P2_newtest\PHero.png                                               1802850 .png
+src\content\work\P5_Haris_test\A1.png                                                126927 .png
+src\content\work\P5_Haris_test\A2.png                                                179001 .png
+src\content\work\P5_Haris_test\A3.png                                                159826 .png
+src\content\work\P5_Haris_test\A4.png                                                126927 .png
+src\content\work\P5_Haris_test\A5.png                                                126927 .png
+src\content\work\P5_Haris_test\A6.png                                                126927 .png
+src\content\work\P5_Haris_test\A6T.png                                                45046 .png
+src\content\work\P5_Haris_test\B1.png                                                151490 .png
+src\content\work\P5_Haris_test\B2.png                                                155938 .png
+src\content\work\P5_Haris_test\B3.png                                                123245 .png
+src\content\work\P5_Haris_test\C1.png                                                149595 .png
+src\content\work\P5_Haris_test\C2.png                                                172236 .png
+src\content\work\P5_Haris_test\C3.png                                                204976 .png
+src\content\work\P5_Haris_test\Haris-capital.md                                        2639 .md
+src\content\work\P5_Haris_test\PHero_.png                                           1802850 .png
+src\content\work\P6_Instructions\working-with-gpt.md                                   4190 .md
+src\content\work\P7_Project\project.md                                                 3093 .md
+src\content\work\P8_Methodology\methodology.md                                         3426 .md
+src\content\work\P9_Workflow\workflow.md                                               3480 .md
+src\layouts\BaseLayout.astro                                                           4510 .astro
+src\pages\404.astro                                                                     258 .astro
+src\pages\about.astro                                                                  3023 .astro
+src\pages\contact.astro                                                                1786 .astro
+src\pages\index.astro                                                                  2038 .astro
+src\pages\work.astro                                                                     36 .astro
+src\pages\work\[...slug].astro                                                         5026 .astro
+src\styles\global.css                                                                  5524 .css

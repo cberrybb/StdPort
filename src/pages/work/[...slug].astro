@@ -72,7 +72,6 @@ const { Content } = await render(entry);
 	<div class="project-page wrapper">
 
 		<header class="intro-header">
-			<a class="back-link" href="/">← Home</a>
 
 			<div class="header-copy">
 				<div class="meta-block">
@@ -130,11 +129,6 @@ const { Content } = await render(entry);
 
 	.header-copy {
 		min-width: 0;
-	}
-
-	.back-link {
-		color: var(--gray-400);
-		text-decoration: none;
 	}
 
 	.meta-block {
@@ -201,7 +195,7 @@ const { Content } = await render(entry);
 	}
 
 	/* Everything follows the same left/right page edges. */
-	.project-content > :global(*) {
+	.project-content > :global(*:not(.code-window)) {
 		width: 100%;
 		max-width: none;
 		margin-left: 0;
@@ -245,10 +239,6 @@ const { Content } = await render(entry);
 		.intro-header {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			column-gap: 3rem;
-		}
-
-		.back-link {
-			grid-column: 1 / -1;
 		}
 
 		.header-copy {
