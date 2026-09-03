@@ -74,24 +74,23 @@ const { Content } = await render(entry);
 		<header class="intro-header">
 			<a class="back-link" href="/">← Home</a>
 
-			<div class="meta-block">
-				<p class="eyebrow">{projectCategory}</p>
+			<div class="header-copy">
+				<div class="meta-block">
+					<p class="eyebrow">{projectCategory}</p>
 
-				<h1>{entry.data.title}</h1>
+					<h1>{entry.data.title}</h1>
 
-				<p class="context">{entry.data.description}</p>
+					<p class="context">{entry.data.description}</p>
 
-				<div class="meta-row">
-					{entry.data.year && <span>{entry.data.year}</span>}
+					<div class="meta-row">
+						{entry.data.year && <span>{entry.data.year}</span>}
 
-					{entry.data.tags?.length > 0 && (
-						<span>{entry.data.tags.join(' / ')}</span>
-					)}
+						{entry.data.tags?.length > 0 && (
+							<span>{entry.data.tags.join(' / ')}</span>
+						)}
+					</div>
 				</div>
 			</div>
-		</header>
-
-		<main class="project-main">
 
 			{heroImage && (
 				<img
@@ -100,6 +99,9 @@ const { Content } = await render(entry);
 					alt={entry.data.img_alt || entry.data.title}
 				/>
 			)}
+		</header>
+
+		<main class="project-main">
 
 			<ProjectExplorer project={entry} />
 
@@ -114,15 +116,20 @@ const { Content } = await render(entry);
 
 <style>
 	.project-page {
-		display: grid;
-		gap: 2rem;
+		width: 80%;
+		margin-inline: auto;
 		padding-block: 1rem 4rem;
 	}
 
 	.intro-header {
 		display: grid;
-		gap: 1rem;
+		gap: 2rem;
 		padding-top: 1rem;
+		align-items: start;
+	}
+
+	.header-copy {
+		min-width: 0;
 	}
 
 	.back-link {
@@ -133,7 +140,6 @@ const { Content } = await render(entry);
 	.meta-block {
 		display: grid;
 		gap: 0.75rem;
-		max-width: 58rem;
 	}
 
 	.eyebrow {
@@ -155,7 +161,6 @@ const { Content } = await render(entry);
 	.context {
 		margin: 0;
 		font-size: var(--text-lg);
-		max-width: 42rem;
 		color: var(--gray-500);
 	}
 
@@ -169,25 +174,46 @@ const { Content } = await render(entry);
 		color: var(--gray-500);
 	}
 
-	.project-main {
-		display: grid;
-		gap: 2rem;
+	.hero-image {
+		display: block;
+		width: 100%;
+		height: auto;
+		margin: 0;
+		border-radius: 1.5rem;
+		border: 1px solid var(--gray-800);
+		box-shadow: var(--shadow-md);
 	}
 
-.hero-image {
-	display: block;
-	width: 80%;
-	height: auto;
-	margin-inline: auto;
-
-	border-radius: 1.5rem;
-	border: 1px solid var(--gray-800);
-	box-shadow: var(--shadow-md);
-}
+	.project-main {
+		display: grid;
+		gap: 3rem;
+		width: 100%;
+		margin-top: 3rem;
+	}
 
 	.project-content {
-		max-width: 58rem;
+		display: grid;
+		gap: 2rem;
+		width: 100%;
+		max-width: none;
+		margin: 0;
 		color: #727272;
+	}
+
+	/* Everything follows the same left/right page edges. */
+	.project-content > :global(*) {
+		width: 100%;
+		max-width: none;
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	/* Keep long-form copy readable without changing the page grid. */
+	.project-content > :global(p),
+	.project-content > :global(ul),
+	.project-content > :global(ol),
+	.project-content > :global(blockquote) {
+		max-width: 58rem;
 	}
 
 	.project-content :global(p),
@@ -202,9 +228,41 @@ const { Content } = await render(entry);
 		color: #8a8a8a;
 	}
 
+	/* Gallery wrappers use the same full width as the hero section. */
+	.project-content :global(.standard-gallery),
+	.project-content :global(.tile-gallery),
+	.project-content :global(.row-gallery) {
+		width: 100%;
+		max-width: none;
+		margin-inline: 0;
+	}
+
 	@media (min-width: 50em) {
 		.project-page {
 			padding-top: 2rem;
+		}
+
+		.intro-header {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			column-gap: 3rem;
+		}
+
+		.back-link {
+			grid-column: 1 / -1;
+		}
+
+		.header-copy {
+			grid-column: 1;
+		}
+
+		.hero-image {
+			grid-column: 2;
+		}
+	}
+
+	@media (max-width: 49.99em) {
+		.project-page {
+			width: 90%;
 		}
 	}
 </style>

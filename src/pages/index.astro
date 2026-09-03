@@ -6,11 +6,9 @@ import Hero from '../components/Hero.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const projects = (await getCollection('work')).sort((a, b) => {
-	const yearA = Number(a.data.year ?? a.data.publishDate.getFullYear());
-	const yearB = Number(b.data.year ?? b.data.publishDate.getFullYear());
-	return yearB - yearA;
-});
+const projects = (await getCollection('work')).sort(
+  (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+);
 ---
 
 <BaseLayout

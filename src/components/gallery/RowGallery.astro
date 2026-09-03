@@ -5,12 +5,12 @@
  *   [gallery:A /row]            -> 3 images per row
  *   [gallery:A /row:3,2,3,2,1] -> explicit row counts
  *
- * Images in a row share a common height. Their widths are weighted from the
- * natural image aspect ratio so portrait and landscape work can sit together.
+ * Images in a row share a common calculated height and always keep their
+ * natural aspect ratio. Rows are justified against the available gallery width
+ * without cropping. Very tall rows are capped at twice the target row height.
  *
- * If an explicit pattern runs out before the images do, remaining images
- * continue in rows of 3. If a requested row is larger than the remaining
- * image count, the final row simply uses the remainder.
+ * A single-value pattern repeats (for example /row:2 -> 2,2,2...). Multi-value
+ * patterns are followed explicitly, then remaining images continue in rows of 3.
  */
 
 import type { GalleryGroup } from './gallery';
@@ -79,6 +79,11 @@ const firstGroupKey = groups[0]?.key ?? '';
 
 <script>
 	const DEFAULT_ROW_COUNT = 3;
+	const TARGET_ROW_HEIGHT = 260;
+	const MAX_ROW_HEIGHT = TARGET_ROW_HEIGHT * 2;
+	const DESKTOP_GAP = 16;
+	const MOBILE_GAP = 10;
+	const MOBILE_BREAKPOINT = 672;
 
 	const parsePattern = (value: string | undefined) =>
 		(value ?? '')
@@ -86,19 +91,69 @@ const firstGroupKey = groups[0]?.key ?? '';
 			.map((part) => Number.parseInt(part.trim(), 10))
 			.filter((count) => Number.isFinite(count) && count > 0);
 
-	const setAspectWeight = (item: HTMLElement) => {
+	const getGap = () =>
+		window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_GAP : DESKTOP_GAP;
+
+	const getAspectRatio = (item: HTMLElement) => {
+		const stored = Number.parseFloat(item.dataset.aspectRatio ?? '');
+		return Number.isFinite(stored) && stored > 0 ? stored : 1;
+	};
+
+	const layoutRow = (row: HTMLElement) => {
+		const items = Array.from(
+			row.querySelectorAll<HTMLElement>(':scope > [data-row-item]'),
+		);
+		if (items.length === 0) return;
+
+		const availableWidth = row.clientWidth;
+		if (availableWidth <= 0) return;
+
+		const gap = getGap();
+		const totalGapWidth = gap * Math.max(0, items.length - 1);
+		const ratios = items.map(getAspectRatio);
+		const totalRatio = ratios.reduce((sum, ratio) => sum + ratio, 0);
+
+		if (totalRatio <= 0) return;
+
+		const justifiedHeight =
+			(availableWidth - totalGapWidth) / totalRatio;
+
+		const rowHeight = Math.min(
+			Math.max(1, justifiedHeight),
+			MAX_ROW_HEIGHT,
+		);
+
+		row.style.setProperty('--row-height', `${rowHeight}px`);
+		row.style.setProperty('--row-gap', `${gap}px`);
+
+		items.forEach((item, index) => {
+			const width = ratios[index] * rowHeight;
+			item.style.width = `${width}px`;
+			item.style.height = `${rowHeight}px`;
+			item.style.flex = '0 0 auto';
+		});
+	};
+
+	const layoutGalleryRows = (gallery: HTMLElement) => {
+		gallery
+			.querySelectorAll<HTMLElement>('.image-row')
+			.forEach(layoutRow);
+	};
+
+	const prepareImage = (item: HTMLElement, gallery: HTMLElement) => {
 		const image = item.querySelector<HTMLImageElement>('img');
 		if (!image) return;
 
 		const apply = () => {
-			const ratio =
-				image.naturalWidth > 0 && image.naturalHeight > 0
-					? image.naturalWidth / image.naturalHeight
-					: 1;
-			item.style.setProperty('--row-ratio', String(ratio));
+			if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+				item.dataset.aspectRatio = String(
+					image.naturalWidth / image.naturalHeight,
+				);
+			}
+			layoutGalleryRows(gallery);
 		};
 
-		if (image.complete) apply();
+		if (image.complete && image.naturalWidth > 0) apply();
 		else image.addEventListener('load', apply, { once: true });
 	};
 
@@ -122,16 +177,16 @@ const firstGroupKey = groups[0]?.key ?? '';
 
 			while (index < items.length) {
 				const requested =
-                    pattern.length === 1
-                        ? pattern[0]
-                        : pattern[patternIndex] ?? DEFAULT_ROW_COUNT;
+					pattern.length === 1
+						? pattern[0]
+						: pattern[patternIndex] ?? DEFAULT_ROW_COUNT;
+
 				const count = Math.min(requested, items.length - index);
 				const row = document.createElement('div');
 				row.className = 'image-row';
 				row.dataset.rowCount = String(count);
 
 				items.slice(index, index + count).forEach((item) => {
-					setAspectWeight(item);
 					row.appendChild(item);
 				});
 
@@ -142,6 +197,15 @@ const firstGroupKey = groups[0]?.key ?? '';
 
 			source.replaceWith(rows);
 		});
+
+		gallery
+			.querySelectorAll<HTMLElement>('[data-row-item]')
+			.forEach((item) => prepareImage(item, gallery));
+
+		layoutGalleryRows(gallery);
+
+		const observer = new ResizeObserver(() => layoutGalleryRows(gallery));
+		observer.observe(gallery);
 	};
 
 	document.addEventListener('gallery:inserted', (event) => {
@@ -169,6 +233,8 @@ const firstGroupKey = groups[0]?.key ?? '';
 		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
 			panel.hidden = panel.dataset.tabPanel !== targetKey;
 		});
+
+		requestAnimationFrame(() => layoutGalleryRows(gallery));
 	});
 </script>
 
@@ -176,8 +242,8 @@ const firstGroupKey = groups[0]?.key ?? '';
 	.project-explorer {
 		display: grid;
 		gap: 1.5rem;
-		width: 80%;
-		margin-inline: auto;
+		width: 100%;
+		margin: 0;
 	}
 
 	.tabs {
@@ -212,17 +278,19 @@ const firstGroupKey = groups[0]?.key ?? '';
 	:global(.row-gallery:not([data-gallery-template]) .rows) {
 		display: grid;
 		gap: 1rem;
+		width: 100%;
 	}
 
 	:global(.row-gallery:not([data-gallery-template]) .image-row) {
 		display: flex;
-		gap: 1rem;
+		align-items: flex-start;
+		gap: var(--row-gap, 1rem);
 		width: 100%;
-		height: clamp(12rem, 26vw, 28rem);
+		min-width: 0;
 	}
 
 	.row-item {
-		flex: var(--row-ratio, 1) 1 0;
+		flex: 0 0 auto;
 		min-width: 0;
 		margin: 0;
 		overflow: hidden;
@@ -234,7 +302,7 @@ const firstGroupKey = groups[0]?.key ?? '';
 		display: block;
 		width: 100%;
 		height: 100%;
-		object-fit: cover;
+		object-fit: contain;
 	}
 
 	.empty {
@@ -245,13 +313,12 @@ const firstGroupKey = groups[0]?.key ?? '';
 	}
 
 	@media (max-width: 42em) {
-		:global(.row-gallery:not([data-gallery-template]) .image-row) {
-			height: clamp(9rem, 42vw, 16rem);
+		:global(.row-gallery:not([data-gallery-template]) .rows) {
 			gap: 0.6rem;
 		}
 
-		:global(.row-gallery:not([data-gallery-template]) .rows) {
-			gap: 0.6rem;
+		:global(.row-gallery:not([data-gallery-template]) .image-row) {
+			gap: var(--row-gap, 0.6rem);
 		}
 	}
 </style>
