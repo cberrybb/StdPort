@@ -823,46 +823,97 @@ First read the tree.
 
 Then identify the high-value files needed to reconstruct current project awareness.
 
-Bias strongly toward inexpensive text:
+The package is an ORIENTATION ANCHOR, not a backup.
+
+Bias strongly toward inexpensive descriptive text and current implementation:
 
 Markdown
+text documentation
 Astro / HTML / templates
 CSS
 JavaScript / TypeScript
 JSON and configuration
 project instructions
-documentation
+README / agent instructions
 status.diff or other safe current-state evidence
+the current project tree
 
-Include text broadly when it is cheap and informative.
+For Markdown, default to including all project-owned `.md` files when that is
+cheap. Narrative, methodology, workflow, plans, accomplishments, TODOs and
+authoring instructions may be as important to reconstruction as executable code.
 
-Do not indiscriminately include binary assets, dependencies, generated output,
-caches, archives or secrets.
+Include enough current source and configuration to test the narrative against
+the implementation.
+
+Do not indiscriminately include:
+
+binary asset libraries
+node_modules
+.git
+dist
+.astro
+caches
+existing ZIP/archive files
+generated output
+secrets
+
+Use the tree to preserve awareness of excluded assets by filename and location
+when their bytes are not needed.
 
 Preserve relative paths in the package.
 
-Before asking me for any file, check whether the current context already contains it.
+Before asking me for any file, check whether the current context already contains
+a sufficiently current copy. Request a fresh file only when the existing copy is
+missing or may have changed.
 
 Then give me ONE copy-and-paste PowerShell command that creates:
 
 gpt-context-current.zip
 
-The command may use a temporary staging folder, but it must not modify the
-actual project files.
+For this project, prefer a temporary staging folder containing the selected files,
+then create the ZIP with Windows `tar -a -c` rather than relying on
+`Compress-Archive`.
+
+The command must:
+
+- not modify the actual project files;
+- remove any old staging folder before starting;
+- remove any old `gpt-context-current.zip` before creating the new one;
+- preserve project-relative paths;
+- include the selected narrative and source files;
+- create the archive from the staging folder;
+- verify that the ZIP exists before deleting the staging folder;
+- retain the staging folder and report failure if the ZIP was not created.
+
+Do not delete the staging folder unconditionally after an archive command.
 
 After giving me the command, tell me only:
 
 1. what it will package;
 2. the ZIP filename to upload;
-3. whether the temporary staging folder is removed automatically.
+3. that staging files are removed only after successful ZIP creation.
 
 Then WAIT for the ZIP.
 
-When I upload it, read the package before proposing project changes.
-Reconstruct current purpose, state, architecture, conventions, current changes,
-documented direction and uncertainties from evidence.
+When I upload it, inspect the actual package before proposing project changes.
+
+Reconstruct, and distinguish where possible:
+
+current implementation
+current Git / working state
+project purpose
+narrative and history
+authoring conventions
+methodology and workflow
+accomplishments
+current TODOs
+documented direction
+uncertainties or stale documentation
 
 Prefer evidence over inference.
+
+If documentation and implementation disagree, report the disagreement rather
+than silently choosing whichever version sounds newer.
 ```
 
 The awareness package answers:
@@ -1048,13 +1099,18 @@ The awareness artifacts have different jobs:
 
 ``` text
 gpt-tree.txt    = where the meaningful material is
-gpt-context.zip = textual evidence the AI can inspect
+gpt-context-current.zip = textual evidence the AI can inspect
 status.diff     = what changed from the relevant Git state
 Git             = recoverable committed checkpoints
 human check     = whether reconstructed understanding is correct
 ```
 
 The context package is not a backup. It is an orientation package.
+
+A backup preserves state.
+
+The awareness package preserves enough orientation to recover the work without
+trying to preserve every interaction that produced it.
 
 Text comes first because it is inexpensive to store, inspect, search,
 compare, diff and transfer while carrying code, documentation,

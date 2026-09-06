@@ -10,54 +10,96 @@ tags:
   - Collaboration
   - Development
 tileFilter: "#23443e"
-# tileImage: "A1T.jpg"  
+# tileImage: "A1T.jpg"
 tileL1: "P6 Working.... "
 tileL2: "With LLMs"
 ---
 
 # Working with GPT: Establish Reality Fast
 
-The quality of AI-assisted development depends heavily on the quality of the context shared between the human and the model.
+The quality of AI-assisted development depends heavily on whether the human and the model can establish the real state of the work quickly.
 
-The aim is not to give GPT everything. It is to make establishing accurate shared context cheap enough that it can be refreshed whenever necessary.
+The aim is not to give GPT everything or ask either side to remember everything. It is to leave enough trustworthy anchors that orientation can be recovered whenever necessary.
 
-> Give the model the smallest useful representation of reality, then let it ask for the detail it needs.
+> Preserve what is necessary to recover orientation, not everything that occurred while reaching it.
 
-This reduces explanation, guessing and stale context.
+A project tree, selected source files, documentation, Git state, terminal output and screenshots can each act as anchors. Together they reduce the amount of reconstruction that has to happen through conversation.
 
 ## Start with the tree
 
 Generate a machine-readable project tree.
 
-The tree gives GPT an overview of the actual project rather than a human description of it.
+The tree gives GPT a map of the actual project rather than a human reconstruction of it.
 
 From that it can identify:
 
 - important source files
 - architecture
 - content structure
+- documentation and narrative
 - experiments and duplicates
 - likely dependencies
 - which files it actually needs
 
+The tree is a map, not the territory. It tells the model what exists and where to look next.
+
 ## Let GPT choose the context
 
-Rather than manually deciding what to upload, give GPT the tree and ask it which files would provide a useful working snapshot.
+Rather than manually deciding what to upload, give GPT the tree and ask it which files would provide useful project awareness.
 
 This avoids both extremes:
 
-- uploading an entire repository
+- uploading the entire repository indiscriminately
 - providing too little information and forcing GPT to guess
 
-## Create a curated snapshot
+Before asking for another file, GPT should also check whether a sufficiently current copy is already available in the existing context.
+
+The human should not have to manually maintain the model's context when the model can cheaply determine what it needs.
+
+## Create an orientation package
 
 Package the selected files into a single archive.
 
-The archive becomes a temporary canonical representation of the project:
+For StdPort this is currently:
 
-> This is what exists now.
+```text
+gpt-context-current.zip
+```
 
-It can contain implementation, configuration, styles and one or two representative pieces of real content without carrying the weight of the entire repository.
+The package is not a backup.
+
+> Backups preserve state. Anchors preserve orientation.
+
+The package should favour inexpensive, informative text: Markdown, documentation, source code, configuration, the project tree and useful current-state evidence.
+
+Narrative matters as well as implementation. Purpose, decisions, accomplishments, TODOs and working conventions may be necessary to understand why the code is the way it is.
+
+Large binary asset collections, dependencies, generated output, caches, archives and secrets generally do not belong in the awareness package unless they are specifically needed.
+
+The package should contain enough implementation to test the documentation against reality.
+
+## Use exact current files for changes
+
+The broad awareness package is for orientation.
+
+An individual change should normally use a much smaller exchange:
+
+```text
+AI identifies exact files needed
+→ human ZIPs only those files
+→ AI inspects the actual current files
+→ AI returns complete replacement files
+→ human overwrites originals
+→ run/test
+→ human returns screenshot or terminal evidence
+```
+
+This separates two jobs:
+
+- broad project orientation
+- exact implementation of the current change
+
+For ordinary source changes, complete replacement files are often safer than asking the human to find and edit fragments manually.
 
 ## Use real work as the test fixture
 
@@ -69,35 +111,66 @@ Changes can then be evaluated against something concrete:
 
 > Does the real project still work?
 
-## Return visual evidence
+Real content is also allowed to challenge the design. If an implementation only works with the development example, it has not yet earned much confidence.
+
+## Return evidence
 
 Source code shows what should happen.
 
-Screenshots show what actually happened.
+Evidence shows what did happen.
 
-Terminal output, browser errors and screenshots provide a fast feedback loop without requiring the user to diagnose the implementation themselves.
+Useful evidence includes:
 
-## Make small changes
+- browser screenshots
+- terminal output
+- compiler or editor diagnostics
+- Git status
+- the actual changed files
+- visible behaviour in the running site
+
+The human does not need to diagnose the technical cause before returning evidence. GPT can inspect the evidence and propose the next cheap test.
+
+## Make one controlled change
 
 Once shared context is reliable, change one meaningful thing at a time.
 
-Run it.
+```text
+objective
+→ orient from anchors
+→ act
+→ observe
+→ verify
+→ leave useful anchors
+→ move on
+```
 
-Look at it.
+Keeping the change bounded makes failure easier to locate and success easier to recognise.
 
-Feed the result back.
+An interesting side problem should not silently replace the current problem.
 
-This keeps errors local and makes diagnosis considerably easier.
+## Verify cheaply
+
+AI output is a proposal until it meets reality.
+
+Where verification is cheap, verify.
+
+Where verification is expensive or unavailable, expose the uncertainty rather than presenting inference as fact.
+
+This changes the trust question. The aim is not to decide whether AI should simply be trusted.
+
+The process is designed so that confidence can be earned through observable checks.
 
 ## Commit known-good states
 
-Git provides hard checkpoints in the collaboration.
+Git provides durable checkpoints.
 
-A commit means:
+A commit means something close to:
 
-> We know this state worked.
+> We have enough evidence to treat this state as known-good.
 
-That reduces the need for either the human or GPT to perfectly remember the sequence of changes that produced it.
+That does not make the software perfect. It creates a recoverable point from which experimentation can continue.
+
+A working diff can provide a more temporary buffer between commits by preserving evidence of what has changed since the last durable checkpoint.
 
 ## Refresh reality when confidence drops
 
@@ -105,51 +178,59 @@ Conversation is not the source of truth.
 
 The project is.
 
-If either side becomes uncertain about the current state, stop reconstructing history from chat.
+If confidence in the current state drops, do not keep reconstructing history from chat. Refresh the relevant anchor:
 
-Generate a new tree or snapshot and inspect reality again.
+- regenerate the tree
+- rebuild the awareness package
+- inspect the exact current file
+- check Git state
+- run the project
+- return new visual or terminal evidence
 
-This is often faster than debugging assumptions.
+Reorientation is often cheaper and more reliable than remembering.
 
 ## The loop
 
 ```text
 PROJECT
    ↓
-TREE
+ANCHORS
+tree + documentation + source + Git + evidence
    ↓
-GPT selects useful context
-   ↓
-CURATED SNAPSHOT
+ORIENT
    ↓
 SMALL CHANGE
    ↓
 RUN + TEST
    ↓
-SCREENSHOT / TERMINAL FEEDBACK
+OBSERVE
    ↓
-DIAGNOSE
+VERIFY / CORRECT
    ↓
-COMMIT KNOWN-GOOD STATE
+COMMIT OR UPDATE THE USEFUL ANCHORS
    ↓
 repeat
 ```
 
-## What this optimizes
+The important property is that learning from one cycle can condition the next one.
 
-The objective is not maximum context.
+The collaboration therefore does not depend entirely on continuity of a particular conversation, human or model.
 
-It is **high-quality shared state with minimal human effort**.
+## Division of labour
 
-The human provides things they can provide cheaply:
+The useful division is not simply "human has the idea, AI writes the code."
 
-- files
-- screenshots
-- terminal output
-- visual judgement
+The human can contribute cheaply:
+
 - intent
+- disciplinary judgement
+- visual judgement
+- priorities
+- acceptance and rejection
+- files and evidence
+- knowledge of what matters
 
-GPT handles things it can do cheaply:
+GPT can contribute cheaply:
 
 - reading structure
 - tracing dependencies
@@ -157,13 +238,29 @@ GPT handles things it can do cheaply:
 - identifying relevant files
 - generating changes
 - diagnosing failures
+- articulating implications
+- turning judgement into executable decision structures
 
-Neither side needs to reproduce the other's work.
+Sometimes the human does not need to specify an algorithm.
+
+They can instead establish the constraints and judgement that determine what an acceptable algorithm is allowed to do.
+
+## Anchoring rather than prompting
+
+Prompting remains useful, but the quality of the collaboration cannot depend on finding a perfect prompt.
+
+A prompt asks the AI to do something.
+
+An anchor gives it somewhere trustworthy to stand.
+
+Good anchors make it easier for a different model—or a different human—to enter the project, establish what is known, identify what is uncertain and continue without pretending to remember the collaboration that came before.
 
 ## A useful rule
 
 > When explaining the state of the project becomes harder than showing it, show it.
 
-A project tree, a curated zip, a screenshot or a Git status can communicate more reliable information than several paragraphs of explanation.
+And when showing everything becomes unnecessary:
 
-The result is a collaboration in which recovering context is inexpensive, experimentation is safer, and more of the user's effort can remain focused on the work itself.
+> Show enough to recover orientation.
+
+The result is not perfect machine memory. It is a development process in which fallibility has less room to compound because reality can be re-established cheaply, tested repeatedly and preserved at useful points.

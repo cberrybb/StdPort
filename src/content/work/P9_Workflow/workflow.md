@@ -1,8 +1,8 @@
 ---
 title: "Workflow: Human and GPT"
 description: |
-  A repeatable collaboration loop for giving GPT accurate project state with
-  minimal explanation, then testing and committing small changes.
+  The concrete operating loop for orienting from project anchors, exchanging
+  exact current files, testing small changes and checkpointing known-good states.
 publishDate: "2026-09-01 00:00:00"
 tags:
   - Workflow
@@ -10,181 +10,330 @@ tags:
   - Collaboration
   - Development
 tileFilter: "#5e7bb0"
-# tileImage: "A1T.jpg"  
+# tileImage: "A1T.jpg"
 tileL1: "P9 Workflow"
 tileL2: "Kontrolle, Vertrauen - a state of immediate usefulness"
 ---
 
 # Human and GPT Workflow
 
-Effective AI collaboration depends on shared state.
+This is the working procedure.
 
-The objective is not to keep the entire project permanently inside a conversation. It is to make restoring accurate context cheap.
+The project carries enough anchors to re-establish reality without requiring either the human or GPT to reconstruct the whole collaboration from memory.
 
-> When explaining the state of the project becomes harder than showing it, show it.
+The operating principle is:
 
-## 1. Generate the tree
+> Orient → change → observe → verify → checkpoint.
 
-Start with a machine-readable view of the project.
+## 1. Establish project awareness
 
-```text
-project-tree.txt
-```
-
-The tree lets GPT see the actual structure rather than relying on a verbal reconstruction.
-
-It can identify:
-
-- live source files
-- architecture
-- content projects
-- experiments
-- duplicates
-- likely dependencies
-- files relevant to the next task
-
-## 2. Let GPT select context
-
-Do not guess which twenty files might matter.
-
-Provide the tree first.
-
-GPT can then identify the smallest useful set of files required to understand the current problem.
-
-## 3. Create a curated snapshot
-
-Package that selection into one archive.
+When broad orientation is needed, start with the current project tree:
 
 ```text
-gpt-working-project.zip
+gpt-tree.txt
 ```
 
-This becomes a temporary canonical snapshot:
+Generate it from the project root:
 
-> This is what exists now.
+```powershell
+tree /F /A > gpt-tree.txt
+git status
+```
 
-It is broad enough to expose relationships between files without requiring the entire repository.
+The tree is the map. It shows what exists and where.
 
-## 4. Use a real project as the fixture
+It should be used before asking the human to explain the repository manually.
 
-Keep at least one real piece of content exercising the system.
+## 2. Build the awareness package when needed
 
-A change is not finished because the code looks plausible.
+Use the tree to select inexpensive, high-value project evidence.
 
-It needs to survive actual content.
+The current awareness package is:
 
-## 5. Make one meaningful change
+```text
+gpt-context-current.zip
+```
 
-Keep changes small enough that their effects remain understandable.
+It should favour:
 
-Change.
+- Markdown and narrative
+- project instructions
+- current Astro / TypeScript / CSS source
+- configuration
+- README and agent instructions
+- `gpt-tree.txt`
+- useful current-state evidence such as `status.diff`
 
-Run.
+It should normally exclude:
 
-Look.
+- `node_modules`
+- `.git`
+- `dist`
+- `.astro`
+- caches
+- generated output
+- existing archives
+- large binary asset collections
+- secrets
 
-Report the result.
+The awareness package is for orientation, not for making every individual edit.
 
-## 6. Feed back reality
+Before requesting another file, GPT should check whether a sufficiently current copy is already available.
 
-Useful feedback includes:
+## 3. Inspect before proposing changes
 
-- screenshots
+When an awareness ZIP or working ZIP is supplied, inspect the actual files before proposing implementation changes.
+
+Distinguish:
+
+```text
+what the code currently does
+what the documentation says
+what Git / status evidence says
+what is inferred
+what remains uncertain
+```
+
+If these disagree, expose the disagreement.
+
+Do not silently resolve uncertainty by choosing the version that sounds most plausible.
+
+## 4. Define one controlled objective
+
+Before editing, identify the current problem narrowly enough that success can be observed.
+
+Useful questions are:
+
+```text
+What are we changing?
+What should remain unchanged?
+What evidence will show that it worked?
+What are the likely failure points?
+```
+
+Do not let an interesting secondary problem replace the current problem.
+
+## 5. Identify the exact current files
+
+For an ordinary change, GPT identifies the smallest exact set of files it needs.
+
+The human packages only those current files when necessary.
+
+The normal exchange is:
+
+```text
+AI identifies exact files needed
+→ human ZIPs only those files
+→ uploads ZIP
+→ AI inspects actual current files
+→ AI returns complete replacement files
+→ human overwrites originals
+```
+
+Do not ask the human to manually reproduce context that is already available.
+
+Do not generate replacement source from a stale awareness copy when a file may have changed since that package was made.
+
+## 6. Prefer complete replacement files
+
+When practical, return complete files with:
+
+- the original filename
+- the exact destination path
+- no unnecessary conversion or reformatting
+
+For source Markdown, edit the raw text directly. Do not pass it through document-conversion tooling that may alter frontmatter, escaping or syntax.
+
+A complete replacement is often easier to verify than a set of instructions for manually editing fragments.
+
+## 7. Run and observe
+
+The human overwrites the original and runs the project.
+
+Return the cheapest useful evidence:
+
+- screenshot
 - terminal output
-- browser errors
+- browser error
+- editor diagnostic
 - Git status
-- the changed file
-- visual judgement
+- visible behaviour
 
-Source code describes intended behaviour.
+The human does not need to diagnose the technical cause before returning the evidence.
 
-The running project reveals actual behaviour.
+## 8. Diagnose from evidence
 
-## 7. Commit known-good states
+GPT compares expected and observed behaviour.
 
-Once a meaningful step works, commit it.
-
-```text
-KNOWN GOOD
-```
-
-A Git checkpoint reduces dependence on conversational memory and makes experimentation safer.
-
-## 8. Refresh context when confidence drops
-
-Do not spend excessive time reconstructing project state from chat history.
-
-If confidence drops:
+If the result is wrong:
 
 ```text
-TREE
-  |
-  v
-CURATED SNAPSHOT
-  |
-  v
-ESTABLISH REALITY AGAIN
+evidence
+→ smallest useful hypothesis
+→ cheap test or bounded correction
+→ run again
 ```
 
-Refreshing reality can be cheaper than debugging an assumption.
+Avoid stacking speculative fixes.
 
-## The loop
+If the evidence disproves the current explanation, discard the explanation rather than defending it.
+
+## 9. Verify success
+
+A change is not known-good merely because the replacement file was produced.
+
+Verify the behaviour that mattered.
+
+Where verification is cheap, verify.
+
+Where it is not available, state the remaining uncertainty.
+
+This is the practical route from trust toward Kontrolle: important claims become observable wherever reasonably possible.
+
+## 10. Commit the known-good state
+
+Once the change works:
+
+```powershell
+git status
+git add .
+git commit -m "Describe the known-good change"
+git status
+```
+
+Push when the remote should also become the durable checkpoint:
+
+```powershell
+git push origin main
+git status
+```
+
+Do not claim a commit or push succeeded until the terminal evidence confirms it.
+
+Git is the durable state anchor.
+
+## 11. Keep a short fragility buffer between anchors
+
+Between commits, a working diff can preserve evidence of what has changed.
+
+For this project:
 
 ```text
-PROJECT
-   |
-   v
-TREE
-   |
-   v
-GPT SELECTS CONTEXT
-   |
-   v
-CURATED SNAPSHOT
-   |
-   v
-SMALL CHANGE
-   |
-   v
-RUN + TEST
-   |
-   v
-SCREENSHOT / TERMINAL
-   |
-   v
-DIAGNOSE
-   |
-   v
-COMMIT
-   |
-   +------> repeat
+status.diff
 ```
+
+The distinction is useful:
+
+```text
+Git commit   = durable known-good anchor
+working diff = live evidence since that anchor
+```
+
+A stale diff is dangerous if it is presented as current state, so refresh it before using it as awareness evidence.
+
+## 12. Refresh orientation when confidence drops
+
+If the conversation and project state begin to diverge, stop trying to remember harder.
+
+Refresh the relevant anchor:
+
+```text
+exact current file
+gpt-tree.txt
+gpt-context-current.zip
+status.diff
+git status
+running site
+screenshot / terminal evidence
+```
+
+Use the cheapest authoritative source for the uncertainty at hand.
+
+Do not document information merely because GPT needs it if GPT can cheaply retrieve the authoritative source itself.
+
+## The normal development loop
+
+```text
+OBJECTIVE
+   ↓
+ORIENT FROM ANCHORS
+   ↓
+IDENTIFY EXACT FILES
+   ↓
+INSPECT CURRENT FILES
+   ↓
+MAKE ONE BOUNDED CHANGE
+   ↓
+RUN
+   ↓
+OBSERVE
+   ↓
+VERIFY / CORRECT
+   ↓
+COMMIT KNOWN-GOOD STATE
+   ↓
+UPDATE USEFUL ANCHORS
+   ↓
+repeat
+```
+
+## Two scales of context
+
+The workflow deliberately uses two different scales.
+
+### Project awareness
+
+```text
+gpt-tree.txt
++
+gpt-context-current.zip
+```
+
+Use these when GPT needs to understand the project broadly: purpose, structure, narrative, implementation, conventions, accomplishments and TODOs.
+
+### Working exchange
+
+```text
+only the exact current files needed for the change
+```
+
+Use this for implementation.
+
+This prevents the awareness package from becoming a substitute for checking current source, while also preventing every small change from requiring the whole project to be uploaded again.
 
 ## Division of effort
 
-The human supplies things that are cheap for the human to provide:
+The human supplies what is cheap and authoritative for the human:
 
 - intent
-- files
-- screenshots
+- priorities
+- disciplinary judgement
 - visual judgement
-- terminal results
+- acceptance or rejection
+- current files
+- observed evidence
 
-GPT handles things that are cheap for the model to perform:
+GPT handles what is cheap for the model:
 
 - reading structure
 - tracing dependencies
-- comparing implementations
-- identifying relevant context
-- generating changes
+- comparing files
+- identifying the required context
+- generating replacements
 - diagnosing failures
+- proposing verification
+- articulating implications
 
-The goal is not for either side to imitate the other.
+The human does not need to become the model's context manager.
 
-The goal is to exchange the smallest amount of information required for each side to do what it does well.
+The model does not get to substitute confidence for evidence.
 
-## The result
+## Working rule
 
-High-quality shared state with low human effort.
+> When explaining the state of the project becomes harder than showing it, show it.
 
-That makes context recovery inexpensive, experimentation safer and the collaboration increasingly useful as the project becomes more complex.
+Then:
+
+> When confidence drops, reorient from the cheapest trustworthy anchor.
+
+This keeps the workflow fast because each cycle can begin from what previous cycles left behind rather than from an attempted reconstruction of everything that happened.
