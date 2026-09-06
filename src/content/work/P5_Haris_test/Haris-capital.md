@@ -57,7 +57,7 @@ The challenge was less about creating one recognisable object and more
 about maintaining a consistent visual character across projects with
 very different purposes, proportions and audiences.
 
-[gallery: A ]
+[gallery: A,B ]
 
 [gallery: B /tile]
 

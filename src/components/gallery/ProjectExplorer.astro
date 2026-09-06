@@ -175,7 +175,12 @@ const projectVideos = buildProjectVideos(project);
 
 		// Reset active state after filtering. This fixes combined/single markers
 		// that do not include the project's first declared gallery.
-		const firstKey = tabs[0]?.dataset.tabButton ?? '';
+		// An empty gallery label deliberately produces no tab button.
+		// The gallery panel must still remain active and visible.
+		const firstKey =
+			tabs[0]?.dataset.tabButton ??
+			panels[0]?.dataset.tabPanel ??
+			'';
 		tabs.forEach((tab, index) => {
 			const active = index === 0;
 			tab.setAttribute('aria-selected', String(active));

@@ -20,6 +20,7 @@ interface Props {
 
 const { groups, projectTitle, source = false } = Astro.props;
 const firstGroupKey = groups[0]?.key ?? '';
+const showTabs = groups.length > 1 || Boolean(groups[0]?.label.trim());
 ---
 
 <div
@@ -27,22 +28,24 @@ const firstGroupKey = groups[0]?.key ?? '';
 	data-gallery-template={source ? 'standard' : undefined}
 	hidden={source}
 >
-	<div class="tabs" role="tablist" aria-label="Project exploration tabs">
-		{groups.map(({ key, label }) => {
-			const isFirst = key === firstGroupKey;
-			return (
-				<button
-					type="button"
-					role="tab"
-					aria-selected={isFirst ? 'true' : 'false'}
-					data-tab-button={key}
-					class:list={['tab-button', { active: isFirst }]}
-				>
-					{label}
-				</button>
-			);
-		})}
-	</div>
+	{showTabs && (
+		<div class="tabs" role="tablist" aria-label="Project exploration tabs">
+			{groups.map(({ key, label }) => {
+				const isFirst = key === firstGroupKey;
+				return (
+					<button
+						type="button"
+						role="tab"
+						aria-selected={isFirst ? 'true' : 'false'}
+						data-tab-button={key}
+						class:list={['tab-button', { active: isFirst }]}
+					>
+						{label}
+					</button>
+				);
+			})}
+		</div>
+	)}
 
 	{groups.map(({ key, label, items }) => {
 		const isFirst = key === firstGroupKey;

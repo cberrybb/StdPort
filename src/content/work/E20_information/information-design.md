@@ -18,7 +18,8 @@ tileL1: "Information Design"
 tileL2: "Geometric line-art pictograms"
 
 gallery:
-  A: "Information Design"
+  A: ""
+
 ---
 
 # Information Design
