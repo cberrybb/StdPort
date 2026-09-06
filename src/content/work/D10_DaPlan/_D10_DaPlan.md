@@ -73,26 +73,19 @@ The table keeps completed work alongside current and future work so that progres
 | Done | 42 | Workflow | Established project anchors as a reorientation mechanism | Tree, context package, Git checkpoints, documentation and evidence provide recoverable orientation without attempting to preserve every conversation |
 | Done | 43 | AI context | Refined the awareness ZIP around descriptive material | The current package deliberately prioritises Markdown, narrative and documentation while carrying enough source code and configuration to reconnect description to implementation |
 | Done | 44 | AI context | Made awareness-package generation reproducible | A PowerShell staging process selects the relevant narrative and source files and creates `gpt-context-current.zip` without carrying build output, dependencies or the image library |
-| Done | 45 | Documentation | Began reconciling documentation with verified reality | Recent updates now record the authoring additions, fixes, user testing and workflow findings; final collapse into concise TL;DR and Authored material remains a later documentation pass |
+| **Next** | 45 | Documentation | Reconcile documentation with verified reality | DaPlan, authoring guidance, README, AI instructions and examples should describe the system that actually survived testing |
 | Todo | 46 | Documentation | Preserve the awareness-package recipe in the project | The successful tree/context-generation commands should exist as a durable project instruction rather than only in conversation |
 | Todo | 47 | Documentation | Reconcile D9, P6, P9 and README | Remove stale names, old packaging assumptions and starter-template language while preserving each document's distinct purpose |
 | Todo | 48 | Architecture | Refactor the homepage implementation after the checkpoint | `index.astro` has accumulated enough tile, control and contrast behaviour that extracting coherent responsibilities should improve maintainability without changing behaviour |
-| Done | 49 | AI context | Tested the project anchors with a genuinely fresh AI | A fresh-context test reconstructed enough project awareness to work, but the AI later substituted generic development defaults for authored constraints; the experiment therefore produced useful negative evidence about anchor adherence |
-| Done | 50 | Beginner path | Simplified the environment support model around VS Code | VS Code is the standard environment; the happy path stays short and platform-specific diagnosis is deferred until actual terminal output shows that it is needed |
-| Done | 51 | Beginner path | Passed the first-success threshold with real users | Both student users progressed beyond running the site and making a first content edit into composing their own project material and requesting new authoring controls |
-| Done | 52 | Beginner path | Tested onboarding with two intended student users | Both daughters were working with the system in about 30 minutes and progressed far enough to request centred/sized single images and video; their use directly drove changes to the authoring language |
-| Done | 63 | Authoring | Added single-image narrative composition | `[image: file /w:n /L|C|R]` gives authors responsive width and left/centre/right placement without requiring a gallery or Astro edit |
-| Done | 64 | Authoring | Added local video narrative composition | `[video: file /w:n /L|C|R]` extends the same small media grammar to project video rather than creating a separate authoring model |
-| Done | 65 | Gallery | Added pill-free labelled-group behaviour | `gallery: { A: "" }` keeps the gallery and its key while suppressing an unwanted empty pill; the gallery runtime was fixed so removing the button does not hide the panel |
-| Done | 66 | Responsive layout | Fixed media and row-gallery interaction | Image/video widths now recalculate from the current text frame so fixed pixel measurements do not hold the layout open and prevent row galleries collapsing responsively |
-| Done | 67 | User testing | Turned student requests into implementation changes | The two-user onboarding became a participatory design cycle: real composition needs produced centred/sized single images, video and gallery/layout refinements |
-| Done | 68 | Methodology | Exposed context accumulation as waste | The fresh-context experiment showed that carrying troubleshooting history is not the objective; prompt plus latest anchors plus current/attempted task should drive work, while superseded intermediate context is disposable |
-| Done | 69 | Workflow | Clarified active-context discipline | Prompt and latest anchor files establish reality; the current task and attempted work provide local state; Todo is drawn down when needed rather than carried wholesale into every task |
-| **Next** | 53 | Authoring | Verify the minimum project-folder convention independently | The daughters’ use substantially exercised Markdown-and-assets authoring; the remaining test is whether a user can create/extend a project with minimal intervention rather than simply operate an existing one |
+| Todo | 49 | AI context | Test the current package with a genuinely fresh AI | A fresh AI can reconstruct sufficient project awareness without access to the conversation that produced the project |
+| Todo | 50 | Beginner path | Write and verify the environment setup path | A beginner can establish the editor, Node, Git, Astro and Descartes with useful checks at likely failure points |
+| Todo | 51 | Beginner path | Define the first successful exercise | A new user can run the site, make one small content change and see the result in the browser |
+| Todo | 52 | Beginner path | Test onboarding with someone who did not build the system | Real observation reveals where the instructions, terminology or abstractions still create unnecessary difficulty |
+| Todo | 53 | Authoring | Verify the minimum project-folder convention with a new user | A project can be created primarily from Markdown, images and predictable filenames without requiring understanding of the implementation |
 | Todo | 54 | Authoring | Reduce unnecessary frontmatter | Information that can safely be inferred does not have to be manually maintained |
-| Todo | 55 | Authoring | Consolidate the expanded authoring grammar | Gallery/hero conventions now also include pill-free galleries, responsive row behaviour, single images, responsive `/w:` sizing, `/L|C|R` alignment and local video; these need concise author-facing treatment rather than more implementation explanation |
+| Todo | 55 | Authoring | Consolidate gallery and hero conventions for authors | Standard, combined, tile, publish, row and hero behaviour can be explained simply without exposing implementation complexity |
 | Todo | 56 | Workflow | Verify the image-ordering workflow with ordinary file tools | Reordering through filenames and Finder/Explorer operations is practical enough that no unnecessary CMS ordering interface is required |
-| Done | 57 | AI | Tested verification and guardrail adherence under fresh context | The AI could defeat authored constraints, introduce unnecessary tooling assumptions and initially misattribute the resulting friction; this demonstrates that prompt/anchor adherence is part of engagement value and cannot be replaced by accumulating more context |
+| Todo | 57 | AI | Keep verification, uncertainty and rabbit-hole avoidance explicit | AI should propose cheap checks, expose what it cannot verify and avoid allowing interesting side problems to replace the current objective |
 | Todo | 58 | Documentation | Keep P0 Inception as the origin story | Important changes in purpose can be added when useful without converting Inception into a current-state technical specification |
 | Todo | 59 | Documentation | Continue using the CMS for Descartes documentation | Documentation remains real authored content and therefore continues testing the system it describes |
 | Later | 60 | Openness | Test portability outside the current CMS | Projects remain useful as ordinary Markdown, images and folders even without the current implementation |
@@ -104,12 +97,11 @@ The table keeps completed work alongside current and future work so that progres
 For each current task:
 
 ```text
-prompt
-→ latest anchor files
-→ current task + what has already been attempted
-→ define the smallest useful change
+small objective
+→ define success
+→ identify likely failure points
+→ make the smallest useful change
 → test against reality
 → fix or commit
-→ update only affected anchors / DaPlan
-→ discard superseded intermediate context
+→ update DaPlan
 ```
