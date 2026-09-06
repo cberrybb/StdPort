@@ -27,6 +27,10 @@ The multivariate poster *Body, Brain, Life: Mapping the Species Danger Index* in
 
 It compares body weight in kilograms with brain weight in grams, complemented by segmented curved graphic symbols representing danger indices and circular ring charts showing maximum lifespans against a 30-year benchmark.
 
-[gallery:A /tile]
+[gallery:A /row:4,3]
 
 Employing custom geometric line-art pictograms and colour-coded visual keys, the design balances narrative clarity with data richness. Iterative adjustments to line weights, standardisation of scales, and simplification of legends create a clearer visual hierarchy, transforming biological research into an accessible graphic composition.
+
+[video: V1.mp4 /w:50 /C]
+
+[image: A3.png /w:50 /c]

@@ -24,6 +24,8 @@
  *   [gallery:A /tile /p]
  *   [gallery:A /row]
  *   [gallery:A /row:3,2,3,2,1]
+ *   [image: A3.png /w:80]
+ *   [video: demo.mp4 /w:80 /C]
  *
  * IMPORTANT
  * ---------
@@ -66,6 +68,80 @@ const allProjectImages = import.meta.glob(
 		import: 'default',
 	},
 ) as Record<string, string>;
+
+
+export interface ProjectImage {
+	name: string;
+	url: string;
+}
+
+const allProjectVideos = import.meta.glob(
+	[
+		'/src/content/work/**/*.mp4',
+		'/src/content/work/**/*.webm',
+		'/src/content/work/**/*.mov',
+		'/src/content/work/**/*.m4v',
+	],
+	{
+		eager: true,
+		query: '?url',
+		import: 'default',
+	},
+) as Record<string, string>;
+
+export interface ProjectVideo {
+	name: string;
+	url: string;
+}
+
+/**
+ * Resolve the image files that sit beside one project's Markdown file.
+ *
+ * This is intentionally separate from gallery grouping so Markdown can
+ * request a specific file by name, for example: [image: A3.png /w:80].
+ */
+export function buildProjectImages(
+	project: CollectionEntry<'work'>,
+): ProjectImage[] {
+	const sourceFile = project.filePath?.replace(/\\/g, '/');
+	const projectDir = sourceFile?.slice(0, sourceFile.lastIndexOf('/')) ?? '';
+	const folderPrefix = projectDir ? `/${projectDir}/` : '';
+
+	if (!folderPrefix) return [];
+
+	return Object.entries(allProjectImages)
+		.filter(([path]) => path.startsWith(folderPrefix))
+		.map(([path, url]) => ({
+			name: path.slice(folderPrefix.length),
+			url,
+		}))
+		.filter((image) => !image.name.includes('/'))
+		.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
+
+/**
+ * Resolve local video files that sit beside one project's Markdown file.
+ *
+ * Example Markdown marker: [video: demo.mp4 /w:80 /C]
+ */
+export function buildProjectVideos(
+	project: CollectionEntry<'work'>,
+): ProjectVideo[] {
+	const sourceFile = project.filePath?.replace(/\\/g, '/');
+	const projectDir = sourceFile?.slice(0, sourceFile.lastIndexOf('/')) ?? '';
+	const folderPrefix = projectDir ? `/${projectDir}/` : '';
+
+	if (!folderPrefix) return [];
+
+	return Object.entries(allProjectVideos)
+		.filter(([path]) => path.startsWith(folderPrefix))
+		.map(([path, url]) => ({
+			name: path.slice(folderPrefix.length),
+			url,
+		}))
+		.filter((video) => !video.name.includes('/'))
+		.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
 
 const escapeRegExp = (value: string) =>
 	value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

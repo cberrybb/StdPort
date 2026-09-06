@@ -22,6 +22,13 @@
  * [gallery:A /tile /p]        tile gallery with QA warnings suppressed
  * [gallery:A /row]            row gallery, 3 images per row by default
  * [gallery:A /row:3,2,3,2,1] row gallery with explicit row counts
+ * [image: A3.png /w:80]     specific image at 80% of text-frame width, left aligned
+ * [image: A3.png /w:80 /L]  explicit left alignment
+ * [image: A3.png /w:80 /C]  centred on the project frame
+ * [video: demo.mp4 /w:80]      video at 80% of text-frame width, left aligned
+ * [video: demo.mp4 /w:80 /L]   explicit left alignment
+ * [video: demo.mp4 /w:80 /C]   centred
+ * [video: demo.mp4 /w:80 /R]   right aligned
  *
  * /p affects QA only. It never hides the gallery.
  *
@@ -35,7 +42,7 @@
  */
 
 import type { CollectionEntry } from 'astro:content';
-import { buildGalleryGroups } from './gallery';
+import { buildGalleryGroups, buildProjectImages, buildProjectVideos } from './gallery';
 import StandardGallery from './StandardGallery.astro';
 import TileGallery from './TileGallery.astro';
 import RowGallery from './RowGallery.astro';
@@ -46,6 +53,8 @@ interface Props {
 
 const { project } = Astro.props;
 const galleryGroups = buildGalleryGroups(project);
+const projectImages = buildProjectImages(project);
+const projectVideos = buildProjectVideos(project);
 ---
 
 {
@@ -70,6 +79,36 @@ const galleryGroups = buildGalleryGroups(project);
 	)
 }
 
+{
+	projectImages.length > 0 && (
+		<div data-project-image-sources hidden>
+			{
+				projectImages.map((image) => (
+					<span
+						data-project-image-name={image.name}
+						data-project-image-url={image.url}
+					/>
+				))
+			}
+		</div>
+	)
+}
+
+{
+	projectVideos.length > 0 && (
+		<div data-project-video-sources hidden>
+			{
+				projectVideos.map((video) => (
+					<span
+						data-project-video-name={video.name}
+						data-project-video-url={video.url}
+					/>
+				))
+			}
+		</div>
+	)
+}
+
 <script>
 	/**
 	 * Keep marker parsing small and explicit. New presentation modes should
@@ -78,7 +117,15 @@ const galleryGroups = buildGalleryGroups(project);
 	const markerPattern =
 		/^\[gallery:\s*([a-z0-9_-]+(?:\s*,\s*[a-z0-9_-]+)*)(?:\s+\/(tile|row(?::\d+(?:,\d+)*)?))?(?:\s+\/(p))?\s*\]$/i;
 
+	const imageMarkerPattern =
+		/^\[image:\s*(.+?)(?:\s+\/w:(\d{1,3}))?(?:\s+\/(L|C|R))?\s*\]$/i;
+
+	const videoMarkerPattern =
+		/^\[video:\s*(.+?)(?:\s+\/w:(\d{1,3}))?(?:\s+\/(L|C|R))?\s*\]$/i;
+
 	const sources = document.querySelector<HTMLElement>('[data-project-gallery-sources]');
+	const imageSources = document.querySelector<HTMLElement>('[data-project-image-sources]');
+	const videoSources = document.querySelector<HTMLElement>('[data-project-video-sources]');
 	const standardSource = sources?.querySelector<HTMLElement>('[data-gallery-template="standard"]');
 	const tileSource = sources?.querySelector<HTMLElement>('[data-gallery-template="tile"]');
 	const rowSource = sources?.querySelector<HTMLElement>('[data-gallery-template="row"]');
@@ -176,11 +223,158 @@ const galleryGroups = buildGalleryGroups(project);
 				paragraph.classList.add('gallery-marker-error');
 			}
 		});
-
-		sources.remove();
-	} else {
-		sources?.remove();
 	}
+
+	const makeMediaWidthResponsive = (
+		figure: HTMLElement,
+		requestedPercent: number,
+		excludedParagraph: HTMLElement,
+	) => {
+		const findReferenceParagraph = () =>
+			Array.from(content!.querySelectorAll<HTMLElement>('p')).find((candidate) => {
+				if (candidate === excludedParagraph) return false;
+				const candidateText = candidate.textContent?.trim() ?? '';
+				return (
+					candidateText.length > 0 &&
+					!markerPattern.test(candidateText) &&
+					!imageMarkerPattern.test(candidateText) &&
+					!videoMarkerPattern.test(candidateText)
+				);
+			});
+
+		const updateWidth = () => {
+			const referenceParagraph = findReferenceParagraph();
+			const textFrameWidth =
+				referenceParagraph?.getBoundingClientRect().width ??
+				content!.getBoundingClientRect().width;
+
+			// Recalculate from the CURRENT text width every time the layout changes.
+			// This prevents an image/video's old pixel width from holding the page open.
+			figure.style.width = `${textFrameWidth * (requestedPercent / 100)}px`;
+			figure.style.maxWidth = '100%';
+		};
+
+		updateWidth();
+
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(content!);
+
+		const referenceParagraph = findReferenceParagraph();
+		if (referenceParagraph) observer.observe(referenceParagraph);
+
+		window.addEventListener('resize', updateWidth);
+	};
+
+	if (imageSources && content) {
+		const imageMarkers = Array.from(content.querySelectorAll('p')).filter((paragraph) =>
+			imageMarkerPattern.test(paragraph.textContent?.trim() ?? ''),
+		);
+
+		imageMarkers.forEach((paragraph) => {
+			const match = (paragraph.textContent?.trim() ?? '').match(imageMarkerPattern);
+			if (!match) return;
+
+			const requestedName = match[1].trim();
+			const requestedWidth = Number(match[2] ?? '100');
+			const width = Math.max(1, requestedWidth);
+			const alignment = (match[3] ?? 'L').toUpperCase();
+			const sourceImage = Array.from(
+				imageSources.querySelectorAll<HTMLElement>('[data-project-image-name]'),
+			).find(
+				(image) =>
+					(image.dataset.projectImageName ?? '').toLowerCase() ===
+					requestedName.toLowerCase(),
+			);
+
+			if (!sourceImage) {
+				paragraph.textContent = `Image not found: ${requestedName}`;
+				paragraph.classList.add('gallery-marker-error');
+				return;
+			}
+
+			const figure = document.createElement('figure');
+			figure.className = 'project-inline-image';
+
+			// /w is always relative to the CURRENT rendered text width.
+			makeMediaWidthResponsive(figure, width, paragraph);
+
+			if (alignment === 'C') {
+				figure.style.marginInline = 'auto';
+			} else if (alignment === 'R') {
+				figure.style.marginLeft = 'auto';
+				figure.style.marginRight = '0';
+			} else {
+				figure.style.marginLeft = '0';
+				figure.style.marginRight = 'auto';
+			}
+
+			const image = document.createElement('img');
+			image.src = sourceImage.dataset.projectImageUrl ?? '';
+			image.alt = requestedName.replace(/\.[^.]+$/, '');
+			figure.appendChild(image);
+
+			paragraph.replaceWith(figure);
+		});
+	}
+
+	if (videoSources && content) {
+		const videoMarkers = Array.from(content.querySelectorAll('p')).filter((paragraph) =>
+			videoMarkerPattern.test(paragraph.textContent?.trim() ?? ''),
+		);
+
+		videoMarkers.forEach((paragraph) => {
+			const match = (paragraph.textContent?.trim() ?? '').match(videoMarkerPattern);
+			if (!match) return;
+
+			const requestedName = match[1].trim();
+			const requestedWidth = Number(match[2] ?? '100');
+			const width = Math.max(1, requestedWidth);
+			const alignment = (match[3] ?? 'L').toUpperCase();
+
+			const sourceVideo = Array.from(
+				videoSources.querySelectorAll<HTMLElement>('[data-project-video-name]'),
+			).find(
+				(video) =>
+					(video.dataset.projectVideoName ?? '').toLowerCase() ===
+					requestedName.toLowerCase(),
+			);
+
+			if (!sourceVideo) {
+				paragraph.textContent = `Video not found: ${requestedName}`;
+				paragraph.classList.add('gallery-marker-error');
+				return;
+			}
+
+			const figure = document.createElement('figure');
+			figure.className = 'project-inline-video';
+
+			// /w is always relative to the CURRENT rendered text width.
+			makeMediaWidthResponsive(figure, width, paragraph);
+
+			if (alignment === 'C') {
+				figure.style.marginInline = 'auto';
+			} else if (alignment === 'R') {
+				figure.style.marginLeft = 'auto';
+				figure.style.marginRight = '0';
+			} else {
+				figure.style.marginLeft = '0';
+				figure.style.marginRight = 'auto';
+			}
+
+			const video = document.createElement('video');
+			video.src = sourceVideo.dataset.projectVideoUrl ?? '';
+			video.controls = true;
+			video.playsInline = true;
+			video.preload = 'metadata';
+			figure.appendChild(video);
+
+			paragraph.replaceWith(figure);
+		});
+	}
+
+	sources?.remove();
+	imageSources?.remove();
+	videoSources?.remove();
 </script>
 
 <style>
@@ -189,5 +383,29 @@ const galleryGroups = buildGalleryGroups(project);
 		border: 1px dashed currentColor;
 		border-radius: 0.75rem;
 		color: var(--gray-400);
+	}
+
+	:global(.project-inline-image) {
+		margin: 0;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	:global(.project-inline-image img) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	:global(.project-inline-video) {
+		margin: 0;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	:global(.project-inline-video video) {
+		display: block;
+		width: 100%;
+		height: auto;
 	}
 </style>

@@ -37,7 +37,7 @@ gallery:
 
 ## Haris Capital
 
-[gallery: A /row:4]
+[gallery: A /row:6]
 
 
 ## End gallery

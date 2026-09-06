@@ -1,5 +1,5 @@
 ---
-title: "Working with GPT: Establish Reality Fast"
+title: "Working with A GPT: Establish Reality Fast"
 description: |
   A lightweight collaboration practice for keeping AI-assisted development
   accurate, fast and grounded in the real state of a project.
@@ -9,10 +9,10 @@ tags:
   - AI
   - Collaboration
   - Development
-tileFilter: "#23443e"
+tileFilter: "#2e6875"
 # tileImage: "A1T.jpg"
 tileL1: "P6 Working.... "
-tileL2: "With LLMs"
+tileL2: "With GPT"
 ---
 
 # Working with GPT: Establish Reality Fast

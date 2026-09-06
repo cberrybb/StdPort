@@ -9,8 +9,11 @@
  * natural aspect ratio. Rows are justified against the available gallery width
  * without cropping. Very tall rows are capped at twice the target row height.
  *
- * A single-value pattern repeats (for example /row:2 -> 2,2,2...). Multi-value
- * patterns are followed explicitly, then remaining images continue in rows of 3.
+ * A single-value pattern is a responsive maximum (for example /row:4 can step
+ * 4 -> 3 -> 2 -> 1 as the gallery narrows). The same responsive maximum applies
+ * to every row so the gallery does not mix 2-column and 3-column layouts merely
+ * because individual image aspect ratios differ. Multi-value patterns are still
+ * honoured, but each requested row count is capped by the current responsive max.
  */
 
 import type { GalleryGroup } from './gallery';
@@ -81,6 +84,7 @@ const firstGroupKey = groups[0]?.key ?? '';
 	const DEFAULT_ROW_COUNT = 3;
 	const TARGET_ROW_HEIGHT = 260;
 	const MAX_ROW_HEIGHT = TARGET_ROW_HEIGHT * 2;
+	const MIN_ITEM_WIDTH = 260;
 	const DESKTOP_GAP = 16;
 	const MOBILE_GAP = 10;
 	const MOBILE_BREAKPOINT = 672;
@@ -99,6 +103,54 @@ const firstGroupKey = groups[0]?.key ?? '';
 		return Number.isFinite(stored) && stored > 0 ? stored : 1;
 	};
 
+	const calculateRowHeight = (
+		items: HTMLElement[],
+		availableWidth: number,
+		gap: number,
+	) => {
+		if (items.length === 0 || availableWidth <= 0) return 0;
+
+		const totalGapWidth = gap * Math.max(0, items.length - 1);
+		const totalRatio = items
+			.map(getAspectRatio)
+			.reduce((sum, ratio) => sum + ratio, 0);
+
+		if (totalRatio <= 0) return 0;
+
+		const justifiedHeight =
+			(availableWidth - totalGapWidth) / totalRatio;
+
+		return Math.min(
+			Math.max(1, justifiedHeight),
+			MAX_ROW_HEIGHT,
+		);
+	};
+
+	const requestedCountForRow = (
+		pattern: number[],
+		patternIndex: number,
+	) => {
+		if (pattern.length === 1) return pattern[0];
+		return pattern[patternIndex] ?? DEFAULT_ROW_COUNT;
+	};
+
+	const getResponsiveMaxColumns = (
+		requestedMax: number,
+		availableWidth: number,
+		gap: number,
+	) => {
+		// One global column cap for the whole gallery at the current width.
+		// As the gallery narrows this steps x -> x-1 -> ... -> 1.
+		const columnsThatFit = Math.max(
+			1,
+			Math.floor(
+				(availableWidth + gap) / (MIN_ITEM_WIDTH + gap),
+			),
+		);
+
+		return Math.max(1, Math.min(requestedMax, columnsThatFit));
+	};
+
 	const layoutRow = (row: HTMLElement) => {
 		const items = Array.from(
 			row.querySelectorAll<HTMLElement>(':scope > [data-row-item]'),
@@ -109,35 +161,111 @@ const firstGroupKey = groups[0]?.key ?? '';
 		if (availableWidth <= 0) return;
 
 		const gap = getGap();
-		const totalGapWidth = gap * Math.max(0, items.length - 1);
-		const ratios = items.map(getAspectRatio);
-		const totalRatio = ratios.reduce((sum, ratio) => sum + ratio, 0);
-
-		if (totalRatio <= 0) return;
-
-		const justifiedHeight =
-			(availableWidth - totalGapWidth) / totalRatio;
-
-		const rowHeight = Math.min(
-			Math.max(1, justifiedHeight),
-			MAX_ROW_HEIGHT,
-		);
+		const rowHeight = calculateRowHeight(items, availableWidth, gap);
+		if (rowHeight <= 0) return;
 
 		row.style.setProperty('--row-height', `${rowHeight}px`);
 		row.style.setProperty('--row-gap', `${gap}px`);
 
-		items.forEach((item, index) => {
-			const width = ratios[index] * rowHeight;
+		items.forEach((item) => {
+			const width = getAspectRatio(item) * rowHeight;
 			item.style.width = `${width}px`;
 			item.style.height = `${rowHeight}px`;
 			item.style.flex = '0 0 auto';
 		});
 	};
 
-	const layoutGalleryRows = (gallery: HTMLElement) => {
-		gallery
-			.querySelectorAll<HTMLElement>('.image-row')
-			.forEach(layoutRow);
+	const rebuildPanelRows = (
+		panel: HTMLElement,
+		gallery: HTMLElement,
+		force = false,
+	) => {
+		const existingRows = panel.querySelector<HTMLElement>('.rows');
+		const source = panel.querySelector<HTMLElement>('[data-row-items]');
+		const holder = source ?? existingRows;
+		if (!holder) return;
+
+		const items = Array.from(
+			holder.querySelectorAll<HTMLElement>('[data-row-item]'),
+		);
+		if (items.length === 0) return;
+
+		const availableWidth = panel.clientWidth || gallery.clientWidth;
+		if (availableWidth <= 0) return;
+
+		const pattern = parsePattern(gallery.dataset.rowPattern);
+		const gap = getGap();
+
+		const requestedMaximum =
+			pattern.length > 0
+				? Math.max(...pattern)
+				: DEFAULT_ROW_COUNT;
+		const responsiveMax = getResponsiveMaxColumns(
+			requestedMaximum,
+			availableWidth,
+			gap,
+		);
+
+		// Avoid rebuilding the DOM repeatedly when a ResizeObserver fires with
+		// the same effective layout conditions.
+		const aspectSignature = items
+			.map((item) => getAspectRatio(item).toFixed(4))
+			.join(',');
+		const signature = [
+			Math.round(availableWidth),
+			gap,
+			pattern.join(','),
+			responsiveMax,
+			aspectSignature,
+		].join('|');
+
+		if (!force && panel.dataset.rowLayoutSignature === signature) {
+			existingRows?.querySelectorAll<HTMLElement>('.image-row').forEach(layoutRow);
+			return;
+		}
+
+		const rows = document.createElement('div');
+		rows.className = 'rows';
+
+		let index = 0;
+		let patternIndex = 0;
+
+		while (index < items.length) {
+			const requested = requestedCountForRow(pattern, patternIndex);
+			const count = Math.max(
+				1,
+				Math.min(
+					requested,
+					responsiveMax,
+					items.length - index,
+				),
+			);
+
+			const row = document.createElement('div');
+			row.className = 'image-row';
+			row.dataset.rowCount = String(count);
+
+			items.slice(index, index + count).forEach((item) => {
+				row.appendChild(item);
+			});
+
+			rows.appendChild(row);
+			index += count;
+			patternIndex += 1;
+		}
+
+		holder.replaceWith(rows);
+		panel.dataset.rowLayoutSignature = signature;
+		rows.querySelectorAll<HTMLElement>('.image-row').forEach(layoutRow);
+	};
+
+	const layoutGalleryRows = (gallery: HTMLElement, force = false) => {
+		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+			// Hidden tab panels have no measurable width. They are rebuilt when
+			// their tab is opened.
+			if (panel.hidden) return;
+			rebuildPanelRows(panel, gallery, force);
+		});
 	};
 
 	const prepareImage = (item: HTMLElement, gallery: HTMLElement) => {
@@ -150,7 +278,7 @@ const firstGroupKey = groups[0]?.key ?? '';
 					image.naturalWidth / image.naturalHeight,
 				);
 			}
-			layoutGalleryRows(gallery);
+			layoutGalleryRows(gallery, true);
 		};
 
 		if (image.complete && image.naturalWidth > 0) apply();
@@ -158,51 +286,11 @@ const firstGroupKey = groups[0]?.key ?? '';
 	};
 
 	const prepareRowGallery = (gallery: HTMLElement) => {
-		const pattern = parsePattern(gallery.dataset.rowPattern);
-
-		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
-			const source = panel.querySelector<HTMLElement>('[data-row-items]');
-			if (!source) return;
-
-			const items = Array.from(
-				source.querySelectorAll<HTMLElement>(':scope > [data-row-item]'),
-			);
-			if (items.length === 0) return;
-
-			const rows = document.createElement('div');
-			rows.className = 'rows';
-
-			let index = 0;
-			let patternIndex = 0;
-
-			while (index < items.length) {
-				const requested =
-					pattern.length === 1
-						? pattern[0]
-						: pattern[patternIndex] ?? DEFAULT_ROW_COUNT;
-
-				const count = Math.min(requested, items.length - index);
-				const row = document.createElement('div');
-				row.className = 'image-row';
-				row.dataset.rowCount = String(count);
-
-				items.slice(index, index + count).forEach((item) => {
-					row.appendChild(item);
-				});
-
-				rows.appendChild(row);
-				index += count;
-				patternIndex += 1;
-			}
-
-			source.replaceWith(rows);
-		});
-
 		gallery
 			.querySelectorAll<HTMLElement>('[data-row-item]')
 			.forEach((item) => prepareImage(item, gallery));
 
-		layoutGalleryRows(gallery);
+		layoutGalleryRows(gallery, true);
 
 		const observer = new ResizeObserver(() => layoutGalleryRows(gallery));
 		observer.observe(gallery);
@@ -272,7 +360,7 @@ const firstGroupKey = groups[0]?.key ?? '';
 			panel.hidden = panel.dataset.tabPanel !== targetKey;
 		});
 
-		requestAnimationFrame(() => layoutGalleryRows(gallery));
+		requestAnimationFrame(() => layoutGalleryRows(gallery, true));
 	});
 
 	document.addEventListener('keydown', (event) => {
