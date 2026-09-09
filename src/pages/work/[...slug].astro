@@ -26,6 +26,22 @@ const { entry } = Astro.props;
 //
 // Leave a group unset to show its pills.
 // Uncomment one choice to lock that group in source and hide its pills.
+//
+// INLINE MARKDOWN OVERRIDES
+// -------------------------
+// Use a one-shot [text:...] marker directly in any project .md file.
+// It affects only the next paragraph, list, or blockquote, then returns
+// automatically to these project-level defaults.
+//
+// Examples:
+// [text:50 /anchor:right /align:left]
+// [text:70 /anchor:center /align:justify]
+// [text:60]
+// 
+// Width: 100, 90, 80, 70, 60, 50
+// Anchor: left, center, right
+// Align: left, center, right, justify
+// Any omitted value inherits the project-level setting.
 
 type ProjectTextAnchor = 'left' | 'center' | 'right';
 type ProjectTextAlign = 'left' | 'center' | 'right' | 'justify';
@@ -218,18 +234,59 @@ const { Content } = await render(entry);
 		});
 	};
 
+	const textMarkerPattern =
+		/^\[text:(100|90|80|70|60|50)(?:\s+\/anchor:(left|center|right))?(?:\s+\/align:(left|center|right|justify))?\s*\]$/i;
+
+	const setupInlineTextMarkers = () => {
+		const content = document.querySelector<HTMLElement>('[data-project-content]');
+		if (!content) return;
+
+		const markers = Array.from(content.querySelectorAll<HTMLElement>(':scope > p')).filter(
+			(paragraph) => textMarkerPattern.test(paragraph.textContent?.trim() ?? ''),
+		);
+
+		markers.forEach((marker) => {
+			const match = (marker.textContent?.trim() ?? '').match(textMarkerPattern);
+			if (!match) return;
+
+			let next = marker.nextElementSibling as HTMLElement | null;
+			while (
+				next &&
+				!['P', 'UL', 'OL', 'BLOCKQUOTE'].includes(next.tagName)
+			) {
+				next = next.nextElementSibling as HTMLElement | null;
+			}
+
+			if (!next) {
+				marker.textContent = 'Text marker has no following text block.';
+				marker.classList.add('text-marker-error');
+				return;
+			}
+
+			next.dataset.inlineTextWidth = match[1];
+			if (match[2]) next.dataset.inlineTextAnchor = match[2].toLowerCase();
+			if (match[3]) next.dataset.inlineTextAlign = match[3].toLowerCase();
+
+			marker.remove();
+		});
+	};
+
 	const applyProjectTextLayout = () => {
 		const content = document.querySelector<HTMLElement>('[data-project-content]');
 		if (!content) return;
 
-		const anchor = content.dataset.projectTextAnchor ?? 'left';
-		const width = content.dataset.projectTextWidth ?? '100';
-		const align = content.dataset.projectTextAlign ?? 'left';
+		const projectAnchor = content.dataset.projectTextAnchor ?? 'left';
+		const projectWidth = content.dataset.projectTextWidth ?? '100';
+		const projectAlign = content.dataset.projectTextAlign ?? 'left';
 
 		content
 			.querySelectorAll<HTMLElement>(':scope > p, :scope > ul, :scope > ol, :scope > blockquote')
 			.forEach((element) => {
 				if (element.classList.contains('code-window')) return;
+
+				const anchor = element.dataset.inlineTextAnchor ?? projectAnchor;
+				const width = element.dataset.inlineTextWidth ?? projectWidth;
+				const align = element.dataset.inlineTextAlign ?? projectAlign;
 
 				element.style.setProperty('width', `${width}%`, 'important');
 				element.style.setProperty('max-width', 'none', 'important');
@@ -264,6 +321,7 @@ const { Content } = await render(entry);
 	};
 
 	const setupProjectTextControls = () => {
+		setupInlineTextMarkers();
 		applyProjectTextLayout();
 		syncProjectTextButtons();
 	};
@@ -416,6 +474,14 @@ const { Content } = await render(entry);
 	.project-content :global(li),
 	.project-content :global(blockquote) {
 		color: #727272;
+	}
+
+	.project-content :global(.text-marker-error) {
+		width: 100% !important;
+		padding: 0.75rem 1rem;
+		border: 1px dashed currentColor;
+		border-radius: 0.75rem;
+		color: var(--gray-400);
 	}
     .project-content :global(h1),
 	.project-content :global(h2),
