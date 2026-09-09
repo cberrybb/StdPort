@@ -111,4 +111,25 @@ const href = `/work/${project.data.slug ?? project.id}`;
 			height: 26rem;
 		}
 	}
+
+	/* In three-card mode the card becomes narrower. Keep the type readable and
+	   make the image height follow the card width instead of remaining 26rem. */
+	@media (min-width: 70em) {
+		:global(.grid[data-columns='3']) .project-card img {
+			height: auto;
+			aspect-ratio: 4 / 3;
+		}
+
+		:global(.grid[data-columns='3']) .project-info {
+			padding: 0.9rem 0.9rem 1.1rem;
+		}
+
+		:global(.grid[data-columns='3']) .project-topline {
+			font-size: 0.75rem;
+		}
+
+		:global(.grid[data-columns='3']) .project-info h2 {
+			font-size: clamp(1.35rem, 1.7vw, 1.8rem);
+		}
+	}
 </style>

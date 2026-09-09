@@ -7,20 +7,52 @@ import ProjectCard from '../components/ProjectCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 /**
- * HOMEPAGE AUTHOR CONTROLS
+ * HOMEPAGE LAYOUT
  *
- * Set the published default here:
- *   defaultView: 'cards' | 'tiles'
- *   tileColumns: 2 | 3 | 4
+ * Choose ONE layout by uncommenting it below.
+ * Leave ALL options commented out to show the setup pills on the page.
+ * Once you select an option here, the setup pills disappear.
  *
- * Keep showControls: true while designing the homepage.
- * Set it to false when the layout is chosen and the authoring pills disappear.
+ * card:2     = cards, 2 across
+ * card:3     = cards, 3 across on wide screens
+ * tile:2     = tiles, 2 across
+ * tile:3     = tiles, 3 across
+ * tile:4     = tiles, 4 across
+ * /c         = colour tile tint
+ * /m         = mono tile tint
  */
-const homepageLayout = {
-	defaultView: 'cards' as 'cards' | 'tiles',
-	tileColumns: 3 as 2 | 3 | 4,
-	showControls: true,
-};
+type HomepageLayout =
+	| 'card:2'
+	| 'card:3'
+	| 'tile:2 /c'
+	| 'tile:3 /c'
+	| 'tile:4 /c'
+	| 'tile:2 /m'
+	| 'tile:3 /m'
+	| 'tile:4 /m';
+
+let homepageLayout: HomepageLayout | undefined;
+
+// homepageLayout = 'card:2';
+// homepageLayout = 'card:3';
+// homepageLayout = 'tile:2 /c';
+// homepageLayout = 'tile:3 /c';
+// homepageLayout = 'tile:4 /c';
+// homepageLayout = 'tile:2 /m';
+// homepageLayout = 'tile:3 /m';
+// homepageLayout = 'tile:4 /m';
+
+const layoutConfigured = homepageLayout !== undefined;
+const configuredParts = homepageLayout?.split(' ') ?? [];
+const configuredBase = configuredParts[0] ?? 'card:2';
+const configuredFilter = configuredParts[1] === '/m' ? 'mono' : 'colour';
+const configuredView = configuredBase.startsWith('tile:') ? 'tiles' : 'cards';
+const configuredColumns = Number(configuredBase.split(':')[1]) || 2;
+const defaultCardColumns = configuredView === 'cards' && configuredColumns === 3 ? 3 : 2;
+const defaultTileColumns =
+	configuredView === 'tiles' && [2, 3, 4].includes(configuredColumns)
+		? configuredColumns
+		: 3;
 
 const projects = (await getCollection('work')).sort(
 	(a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime(),
@@ -109,59 +141,42 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 	<div
 		class="page-shell stack gap-20"
 		data-home-layout
-		data-default-view={homepageLayout.defaultView}
-		data-default-columns={homepageLayout.tileColumns}
-		data-default-filter-mode="colour"
-		data-show-controls={String(homepageLayout.showControls)}
+		data-default-view={configuredView}
+		data-default-card-columns={defaultCardColumns}
+		data-default-tile-columns={defaultTileColumns}
+		data-default-filter-mode={configuredFilter}
+		data-show-controls={String(!layoutConfigured)}
 	>
-		{homepageLayout.showControls && (
-			<div class="layout-controls" aria-label="Homepage author layout controls">
+		{!layoutConfigured && (
+			<div class="layout-controls" aria-label="Homepage setup controls">
 				<div class="control-pill" aria-label="Homepage layout">
-					<button
-						type="button"
-						data-layout-view="cards"
-						aria-pressed={homepageLayout.defaultView === 'cards' ? 'true' : 'false'}
-					>
+					<button type="button" data-layout-view="cards" aria-pressed={configuredView === 'cards' ? 'true' : 'false'}>
 						Cards
 					</button>
-					<button
-						type="button"
-						data-layout-view="tiles"
-						aria-pressed={homepageLayout.defaultView === 'tiles' ? 'true' : 'false'}
-					>
+					<button type="button" data-layout-view="tiles" aria-pressed={configuredView === 'tiles' ? 'true' : 'false'}>
 						Tiles
 					</button>
 				</div>
 
-				<div
-					class="control-pill column-controls"
-					data-column-controls
-					hidden={homepageLayout.defaultView !== 'tiles'}
-					aria-label="Tile columns"
-				>
-					{([2, 3, 4] as const).map((columns) => (
-						<button
-							type="button"
-							data-layout-columns={columns}
-							aria-pressed={homepageLayout.tileColumns === columns ? 'true' : 'false'}
-						>
+				<div class="control-pill column-controls" data-card-column-controls hidden={configuredView !== 'cards'} aria-label="Card columns">
+					{([2, 3] as const).map((columns) => (
+						<button type="button" data-card-columns={columns} aria-pressed={defaultCardColumns === columns ? 'true' : 'false'}>
 							{columns}
 						</button>
 					))}
 				</div>
 
-				<div
-					class="control-pill filter-controls"
-					data-filter-controls
-					hidden={homepageLayout.defaultView !== 'tiles'}
-					aria-label="Tile filter preview"
-				>
-					<button type="button" data-filter-mode="mono" aria-pressed="false">
-						Mono
-					</button>
-					<button type="button" data-filter-mode="colour" aria-pressed="true">
-						Colour
-					</button>
+				<div class="control-pill column-controls" data-tile-column-controls hidden={configuredView !== 'tiles'} aria-label="Tile columns">
+					{([2, 3, 4] as const).map((columns) => (
+						<button type="button" data-tile-columns={columns} aria-pressed={defaultTileColumns === columns ? 'true' : 'false'}>
+							{columns}
+						</button>
+					))}
+				</div>
+
+				<div class="control-pill filter-controls" data-filter-controls hidden={configuredView !== 'tiles'} aria-label="Tile colour mode">
+					<button type="button" data-filter-mode="mono" aria-pressed={configuredFilter === 'mono' ? 'true' : 'false'}>Mono</button>
+					<button type="button" data-filter-mode="colour" aria-pressed={configuredFilter === 'colour' ? 'true' : 'false'}>Colour</button>
 				</div>
 			</div>
 		)}
@@ -180,9 +195,9 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 				class="portfolio-view cards-view"
 				data-home-view="cards"
 				aria-label="Portfolio projects"
-				hidden={homepageLayout.defaultView !== 'cards'}
+				hidden={configuredView !== 'cards'}
 			>
-				<Grid variant="offset">
+				<Grid variant="offset" columns={defaultCardColumns} authorControlled>
 					{projects.map((project) => (
 						<li>
 							<ProjectCard project={project} />
@@ -195,12 +210,12 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 				class="portfolio-view tiles-view"
 				data-home-view="tiles"
 				aria-label="Portfolio projects"
-				hidden={homepageLayout.defaultView !== 'tiles'}
+				hidden={configuredView !== 'tiles'}
 			>
 				<ul
 					class="project-tiles"
 					data-project-tiles
-					style={`--tile-columns: ${homepageLayout.tileColumns}`}
+					style={`--tile-columns: ${defaultTileColumns}`}
 				>
 					{projects.map((project) => (
 						<li>
@@ -357,7 +372,10 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 			});
 		};
 		const defaultView = root.dataset.defaultView === 'tiles' ? 'tiles' : 'cards';
-		const defaultColumns = Number(root.dataset.defaultColumns) || 3;
+		const defaultCardColumns = Number(root.dataset.defaultCardColumns) === 3 ? 3 : 2;
+		const defaultTileColumns = [2, 3, 4].includes(Number(root.dataset.defaultTileColumns))
+			? Number(root.dataset.defaultTileColumns)
+			: 3;
 		const defaultFilterMode =
 			root.dataset.defaultFilterMode === 'mono' ? 'mono' : 'colour';
 		const showControls = root.dataset.showControls === 'true';
@@ -365,11 +383,16 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 		const viewButtons = Array.from(
 			root.querySelectorAll<HTMLButtonElement>('[data-layout-view]'),
 		);
-		const columnButtons = Array.from(
-			root.querySelectorAll<HTMLButtonElement>('[data-layout-columns]'),
+		const cardColumnButtons = Array.from(
+			root.querySelectorAll<HTMLButtonElement>('[data-card-columns]'),
 		);
-		const columnControls =
-			root.querySelector<HTMLElement>('[data-column-controls]');
+		const tileColumnButtons = Array.from(
+			root.querySelectorAll<HTMLButtonElement>('[data-tile-columns]'),
+		);
+		const cardColumnControls =
+			root.querySelector<HTMLElement>('[data-card-column-controls]');
+		const tileColumnControls =
+			root.querySelector<HTMLElement>('[data-tile-column-controls]');
 		const filterControls =
 			root.querySelector<HTMLElement>('[data-filter-controls]');
 		const filterButtons = Array.from(
@@ -378,6 +401,7 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 		const views = Array.from(
 			root.querySelectorAll<HTMLElement>('[data-home-view]'),
 		);
+		const cardGrid = root.querySelector<HTMLElement>('[data-card-grid]');
 		const tileGrid = root.querySelector<HTMLElement>('[data-project-tiles]');
 
 		const storageKey = 'stdport-homepage-layout';
@@ -386,7 +410,8 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 					try {
 						return JSON.parse(localStorage.getItem(storageKey) ?? '{}') as {
 							view?: string;
-							columns?: number;
+							cardColumns?: number;
+							tileColumns?: number;
 							filterMode?: string;
 						};
 					} catch {
@@ -400,10 +425,15 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 				? stored.view
 				: defaultView;
 
-		let columns =
-			stored.columns === 2 || stored.columns === 3 || stored.columns === 4
-				? stored.columns
-				: defaultColumns;
+		let cardColumns =
+			stored.cardColumns === 3 || stored.cardColumns === 2
+				? stored.cardColumns
+				: defaultCardColumns;
+
+		let tileColumns =
+			stored.tileColumns === 2 || stored.tileColumns === 3 || stored.tileColumns === 4
+				? stored.tileColumns
+				: defaultTileColumns;
 
 		let filterMode =
 			stored.filterMode === 'mono' || stored.filterMode === 'colour'
@@ -422,13 +452,21 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 				);
 			});
 
-			if (columnControls) columnControls.hidden = view !== 'tiles';
+			if (cardColumnControls) cardColumnControls.hidden = view !== 'cards';
+			if (tileColumnControls) tileColumnControls.hidden = view !== 'tiles';
 			if (filterControls) filterControls.hidden = view !== 'tiles';
 
-			columnButtons.forEach((button) => {
+			cardColumnButtons.forEach((button) => {
 				button.setAttribute(
 					'aria-pressed',
-					String(Number(button.dataset.layoutColumns) === columns),
+					String(Number(button.dataset.cardColumns) === cardColumns),
+				);
+			});
+
+			tileColumnButtons.forEach((button) => {
+				button.setAttribute(
+					'aria-pressed',
+					String(Number(button.dataset.tileColumns) === tileColumns),
 				);
 			});
 
@@ -440,17 +478,18 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 			});
 
 			root.dataset.filterMode = filterMode;
-			tileGrid?.style.setProperty('--tile-columns', String(columns));
+			if (cardGrid) cardGrid.dataset.columns = String(cardColumns);
+			tileGrid?.style.setProperty('--tile-columns', String(tileColumns));
 			requestAnimationFrame(updateAllTileContrast);
 
 			if (showControls) {
 				try {
 					localStorage.setItem(
 						storageKey,
-						JSON.stringify({ view, columns, filterMode }),
+						JSON.stringify({ view, cardColumns, tileColumns, filterMode }),
 					);
 				} catch {
-					// The authoring controls still work if storage is unavailable.
+					// The setup controls still work if storage is unavailable.
 				}
 			}
 		};
@@ -462,11 +501,21 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 			});
 		});
 
-		columnButtons.forEach((button) => {
+		cardColumnButtons.forEach((button) => {
 			button.addEventListener('click', () => {
-				const next = Number(button.dataset.layoutColumns);
+				const next = Number(button.dataset.cardColumns);
+				if (next === 2 || next === 3) {
+					cardColumns = next;
+					render();
+				}
+			});
+		});
+
+		tileColumnButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				const next = Number(button.dataset.tileColumns);
 				if (next === 2 || next === 3 || next === 4) {
-					columns = next;
+					tileColumns = next;
 					render();
 				}
 			});
@@ -513,15 +562,14 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 
 	.layout-controls {
 		position: fixed;
-		top: 0.75rem;
 		right: 1rem;
-		/* Above the normal <nav> stacking layer so these fixed author controls
-		   are clickable before the page has scrolled past the nav box. */
+		bottom: 1rem;
 		z-index: 10001;
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 
 	.control-pill {
@@ -707,10 +755,8 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 
 	@media (max-width: 49.99em) {
 		.layout-controls {
-			top: auto;
 			right: 0.75rem;
 			bottom: 0.75rem;
-			flex-wrap: wrap;
 		}
 
 		.project-tiles {

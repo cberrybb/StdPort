@@ -1,12 +1,18 @@
 ---
 interface Props {
 	variant?: 'offset' | 'small';
+	columns?: 2 | 3;
+	authorControlled?: boolean;
 }
 
-const { variant } = Astro.props;
+const { variant, columns = 2, authorControlled = false } = Astro.props;
 ---
 
-<ul class:list={['grid', { offset: variant === 'offset', small: variant === 'small' }]}>
+<ul
+	class:list={['grid', { offset: variant === 'offset', small: variant === 'small' }]}
+	data-card-grid={authorControlled ? '' : undefined}
+	data-columns={columns}
+>
 	<slot />
 </ul>
 
@@ -35,18 +41,17 @@ const { variant } = Astro.props;
 			gap: 4rem;
 		}
 
-		.grid.offset {
+		/* Preserve the existing stagger exactly for the normal two-card layout. */
+		.grid.offset[data-columns='2'] {
 			--row-offset: 7.5rem;
 			padding-bottom: var(--row-offset);
 		}
 
-		/* Shift first item in each row vertically to create staggered effect. */
-		.grid.offset > :global(:nth-child(odd)) {
+		.grid.offset[data-columns='2'] > :global(:nth-child(odd)) {
 			transform: translateY(var(--row-offset));
 		}
 
-		/* If last row contains only one item, display it in the second column. */
-		.grid.offset > :global(:last-child:nth-child(odd)) {
+		.grid.offset[data-columns='2'] > :global(:last-child:nth-child(odd)) {
 			grid-column: 2 / 3;
 			transform: none;
 		}
@@ -60,6 +65,19 @@ const { variant } = Astro.props;
 
 		.grid.small > :global(*) {
 			flex-basis: 20rem;
+		}
+	}
+
+	/* Three-card mode only appears when there is enough room for the card copy. */
+	@media (min-width: 70em) {
+		.grid[data-columns='3']:not(.small) {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 2rem;
+		}
+
+		/* Three across is intentionally unstaggered. */
+		.grid.offset[data-columns='3'] {
+			padding-bottom: 0;
 		}
 	}
 </style>

@@ -18,6 +18,38 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 
+// PROJECT TEXT FORMATTING
+//
+// Anchor = where the text column sits.
+// Width  = how wide the text column is.
+// Text   = alignment inside the column.
+//
+// Leave a group unset to show its pills.
+// Uncomment one choice to lock that group in source and hide its pills.
+
+type ProjectTextAnchor = 'left' | 'center' | 'right';
+type ProjectTextAlign = 'left' | 'center' | 'right' | 'justify';
+type ProjectTextWidth = 100 | 90 | 80 | 70 | 60 | 50;
+
+let projectTextAnchor: ProjectTextAnchor | undefined;
+// projectTextAnchor = 'left';
+// projectTextAnchor = 'center';
+// projectTextAnchor = 'right';
+
+let projectTextWidth: ProjectTextWidth | undefined;
+// projectTextWidth = 100;
+// projectTextWidth = 90;
+// projectTextWidth = 80;
+// projectTextWidth = 70;
+// projectTextWidth = 60;
+// projectTextWidth = 50;
+
+let projectTextAlign: ProjectTextAlign | undefined;
+// projectTextAlign = 'left';
+// projectTextAlign = 'center';
+// projectTextAlign = 'right';
+// projectTextAlign = 'justify';
+
 /*
  * Example:
  * src/content/work/P1_advanced/advanced.md
@@ -98,11 +130,59 @@ const { Content } = await render(entry);
 		<main class="project-main">
 			<ProjectExplorer project={entry} />
 
-			<div class="project-content">
+			<div
+				class="project-content"
+				data-project-content
+				data-project-text-anchor={projectTextAnchor ?? 'left'}
+				data-project-text-width={projectTextWidth ?? 100}
+				data-project-text-align={projectTextAlign ?? 'left'}
+			>
 				<Content />
 			</div>
 		</main>
 	</div>
+
+	{(
+		projectTextAnchor === undefined ||
+		projectTextWidth === undefined ||
+		projectTextAlign === undefined
+	) && (
+		<div class="text-setup" aria-label="Project text layout">
+			{projectTextAnchor === undefined && (
+				<div class="text-setup-group">
+					<span>Anchor</span>
+					{(['left', 'center', 'right'] as const).map((value) => (
+						<button type="button" data-text-anchor={value} aria-pressed={value === 'left' ? 'true' : 'false'}>
+							{value === 'left' ? 'L' : value === 'center' ? 'C' : 'R'}
+						</button>
+					))}
+				</div>
+			)}
+
+			{projectTextWidth === undefined && (
+				<div class="text-setup-group">
+					<span>Width</span>
+					{([100, 90, 80, 70, 60, 50] as const).map((value) => (
+						<button type="button" data-text-width={value} aria-pressed={value === 100 ? 'true' : 'false'}>
+							{value}
+						</button>
+					))}
+				</div>
+			)}
+
+			{projectTextAlign === undefined && (
+				<div class="text-setup-group">
+					<span>Text</span>
+					{(['left', 'center', 'right', 'justify'] as const).map((value) => (
+						<button type="button" data-text-align={value} aria-pressed={value === 'left' ? 'true' : 'false'}>
+							{value === 'left' ? 'L' : value === 'center' ? 'C' : value === 'right' ? 'R' : 'J'}
+						</button>
+					))}
+				</div>
+			)}
+		</div>
+	)}
+
 </BaseLayout>
 
 <script>
@@ -138,7 +218,85 @@ const { Content } = await render(entry);
 		});
 	};
 
+	const applyProjectTextLayout = () => {
+		const content = document.querySelector<HTMLElement>('[data-project-content]');
+		if (!content) return;
+
+		const anchor = content.dataset.projectTextAnchor ?? 'left';
+		const width = content.dataset.projectTextWidth ?? '100';
+		const align = content.dataset.projectTextAlign ?? 'left';
+
+		content
+			.querySelectorAll<HTMLElement>(':scope > p, :scope > ul, :scope > ol, :scope > blockquote')
+			.forEach((element) => {
+				if (element.classList.contains('code-window')) return;
+
+				element.style.setProperty('width', `${width}%`, 'important');
+				element.style.setProperty('max-width', 'none', 'important');
+				element.style.setProperty('text-align', align, 'important');
+
+				if (anchor === 'center') {
+					element.style.setProperty('margin-left', 'auto', 'important');
+					element.style.setProperty('margin-right', 'auto', 'important');
+				} else if (anchor === 'right') {
+					element.style.setProperty('margin-left', 'auto', 'important');
+					element.style.setProperty('margin-right', '0', 'important');
+				} else {
+					element.style.setProperty('margin-left', '0', 'important');
+					element.style.setProperty('margin-right', 'auto', 'important');
+				}
+			});
+	};
+
+	const syncProjectTextButtons = () => {
+		const content = document.querySelector<HTMLElement>('[data-project-content]');
+		if (!content) return;
+
+		document.querySelectorAll<HTMLButtonElement>('[data-text-anchor]').forEach((button) => {
+			button.setAttribute('aria-pressed', String(button.dataset.textAnchor === content.dataset.projectTextAnchor));
+		});
+		document.querySelectorAll<HTMLButtonElement>('[data-text-width]').forEach((button) => {
+			button.setAttribute('aria-pressed', String(button.dataset.textWidth === content.dataset.projectTextWidth));
+		});
+		document.querySelectorAll<HTMLButtonElement>('[data-text-align]').forEach((button) => {
+			button.setAttribute('aria-pressed', String(button.dataset.textAlign === content.dataset.projectTextAlign));
+		});
+	};
+
+	const setupProjectTextControls = () => {
+		applyProjectTextLayout();
+		syncProjectTextButtons();
+	};
+
+	if (!document.documentElement.dataset.projectTextControlsBound) {
+		document.documentElement.dataset.projectTextControlsBound = 'true';
+
+		document.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+
+			const button = target.closest<HTMLButtonElement>('[data-text-anchor], [data-text-width], [data-text-align]');
+			if (!button) return;
+
+			const content = document.querySelector<HTMLElement>('[data-project-content]');
+			if (!content) return;
+
+			if (button.dataset.textAnchor) content.dataset.projectTextAnchor = button.dataset.textAnchor;
+			if (button.dataset.textWidth) content.dataset.projectTextWidth = button.dataset.textWidth;
+			if (button.dataset.textAlign) content.dataset.projectTextAlign = button.dataset.textAlign;
+
+			applyProjectTextLayout();
+			syncProjectTextButtons();
+		});
+	}
+
 	sizePortraitHeroes();
+	setupProjectTextControls();
+
+	document.addEventListener('astro:page-load', () => {
+		sizePortraitHeroes();
+		setupProjectTextControls();
+	});
 </script>
 
 <style>
@@ -249,13 +407,10 @@ const { Content } = await render(entry);
 		margin-right: 0;
 	}
 
-	/* Keep long-form copy readable without changing the page grid. */
-	.project-content > :global(p),
-	.project-content > :global(ul),
-	.project-content > :global(ol),
-	.project-content > :global(blockquote) {
-		max-width: 58rem;
-	}
+	/* Anchor, width and text alignment are applied directly by the
+	 * control script so they remain independent and cannot be cancelled
+	 * by the general full-width content rule above.
+	 */
 
 	.project-content :global(p),
 	.project-content :global(li),
@@ -267,6 +422,58 @@ const { Content } = await render(entry);
 	.project-content :global(h3),
 	.project-content :global(h4) {
 		color: #120841;
+	}
+
+	.text-setup {
+		position: fixed;
+		right: 1.25rem;
+		bottom: 1.25rem;
+		z-index: 100;
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.8rem;
+		max-width: min(94vw, 48rem);
+		padding: 0.5rem 0.65rem;
+		border: 1px solid var(--gray-700, #b8b8b8);
+		border-radius: 1rem;
+		background: var(--gray-999, #ffffff);
+		box-shadow: var(--shadow-md);
+	}
+
+	.text-setup-group {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+
+	.text-setup-group > span {
+		margin-right: 0.1rem;
+		font-size: 0.7rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--gray-500, #727272);
+	}
+
+	.text-setup button {
+		appearance: none;
+		min-width: 2rem;
+		border: 1px solid var(--gray-700, #b8b8b8);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--gray-300, #444444);
+		font: inherit;
+		font-size: var(--text-sm);
+		line-height: 1;
+		padding: 0.45rem 0.6rem;
+		cursor: pointer;
+	}
+
+	.text-setup button[aria-pressed='true'] {
+		background: var(--accent-regular, #5f4bdb);
+		border-color: var(--accent-regular, #5f4bdb);
+		color: #ffffff;
 	}
 
 	/* Gallery wrappers use the same full width as the hero section. */
@@ -301,6 +508,8 @@ const { Content } = await render(entry);
 		.project-page {
 			width: 90%;
 		}
+
+
 
 		/* On the stacked mobile layout, use the normal full-width hero. */
 		.hero-image.is-portrait {
