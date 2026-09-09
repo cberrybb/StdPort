@@ -166,7 +166,7 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 			</div>
 		)}
 
-		<main class="wrapper stack gap-8">
+		<main class="home-main wrapper stack gap-8">
 
 			<div class="hero-row">
 				<Hero
@@ -501,6 +501,11 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 		padding-block: 1rem 4rem;
 	}
 
+	.home-main {
+		width: 80%;
+		margin-inline: auto;
+	}
+
 	.hero-row {
 		display: grid;
 		gap: 2rem;
@@ -728,6 +733,12 @@ const projectTileL2 = (project: (typeof projects)[number]) =>
 
 		.intro-grid {
 			grid-template-columns: minmax(0, 1fr) auto;
+		}
+	}
+
+	@media (max-width: 49.99em) {
+		.home-main {
+			width: 90%;
 		}
 	}
 </style>
