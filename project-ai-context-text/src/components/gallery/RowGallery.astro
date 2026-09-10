@@ -1,0 +1,503 @@
+---
+/**
+ * RowGallery
+ *
+ *   [gallery:A /row]            -> 3 images per row
+ *   [gallery:A /row:3,2,3,2,1] -> explicit row counts
+ *
+ * Images in a row share a common calculated height and always keep their
+ * natural aspect ratio. Rows are justified against the available gallery width
+ * without cropping. Very tall rows are capped at twice the target row height.
+ *
+ * A single-value pattern is a responsive maximum (for example /row:4 can step
+ * 4 -> 3 -> 2 -> 1 as the gallery narrows). The same responsive maximum applies
+ * to every row so the gallery does not mix 2-column and 3-column layouts merely
+ * because individual image aspect ratios differ. Multi-value patterns are still
+ * honoured, but each requested row count is capped by the current responsive max.
+ */
+
+import type { GalleryGroup } from './gallery';
+
+interface Props {
+	groups: GalleryGroup[];
+	projectTitle: string;
+	source?: boolean;
+}
+
+const { groups, projectTitle, source = false } = Astro.props;
+const firstGroupKey = groups[0]?.key ?? '';
+const showTabs = groups.length > 1 || Boolean(groups[0]?.label.trim());
+---
+
+<div
+	class="project-explorer row-gallery"
+	data-gallery-template={source ? 'row' : undefined}
+	hidden={source}
+>
+	{showTabs && (
+		<div class="tabs" role="tablist" aria-label="Project exploration tabs">
+			{groups.map(({ key, label }) => {
+				const isFirst = key === firstGroupKey;
+				return (
+					<button
+						type="button"
+						role="tab"
+						aria-selected={isFirst ? 'true' : 'false'}
+						data-tab-button={key}
+						class:list={['tab-button', { active: isFirst }]}
+					>
+						{label}
+					</button>
+				);
+			})}
+		</div>
+	)}
+
+	{groups.map(({ key, label, items }) => {
+		const isFirst = key === firstGroupKey;
+		return (
+			<section
+				class="gallery-panel"
+				role="tabpanel"
+				aria-label={`${label} gallery`}
+				data-tab-panel={key}
+				hidden={!isFirst}
+			>
+				{items.length > 0 ? (
+					<div class="row-items" data-row-items>
+						{items.map((image, index) => (
+							<figure class="row-item" data-row-item tabindex="0" role="button" aria-label={`Expand ${projectTitle} ${label} ${index + 1}`}>
+								<img
+									src={image.url}
+									alt={`${projectTitle} ${label} ${index + 1}`}
+									loading="lazy"
+								/>
+							</figure>
+						))}
+					</div>
+				) : (
+					<p class="empty">No images available yet.</p>
+				)}
+			</section>
+		);
+	})}
+</div>
+
+<script>
+	const DEFAULT_ROW_COUNT = 3;
+	const TARGET_ROW_HEIGHT = 260;
+	const MAX_ROW_HEIGHT = TARGET_ROW_HEIGHT * 2;
+	const MIN_ITEM_WIDTH = 260;
+	const DESKTOP_GAP = 16;
+	const MOBILE_GAP = 10;
+	const MOBILE_BREAKPOINT = 672;
+
+	const parsePattern = (value: string | undefined) =>
+		(value ?? '')
+			.split(',')
+			.map((part) => Number.parseInt(part.trim(), 10))
+			.filter((count) => Number.isFinite(count) && count > 0);
+
+	const getGap = () =>
+		window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_GAP : DESKTOP_GAP;
+
+	const getAspectRatio = (item: HTMLElement) => {
+		const stored = Number.parseFloat(item.dataset.aspectRatio ?? '');
+		return Number.isFinite(stored) && stored > 0 ? stored : 1;
+	};
+
+	const calculateRowHeight = (
+		items: HTMLElement[],
+		availableWidth: number,
+		gap: number,
+	) => {
+		if (items.length === 0 || availableWidth <= 0) return 0;
+
+		const totalGapWidth = gap * Math.max(0, items.length - 1);
+		const totalRatio = items
+			.map(getAspectRatio)
+			.reduce((sum, ratio) => sum + ratio, 0);
+
+		if (totalRatio <= 0) return 0;
+
+		const justifiedHeight =
+			(availableWidth - totalGapWidth) / totalRatio;
+
+		return Math.min(
+			Math.max(1, justifiedHeight),
+			MAX_ROW_HEIGHT,
+		);
+	};
+
+	const requestedCountForRow = (
+		pattern: number[],
+		patternIndex: number,
+	) => {
+		if (pattern.length === 1) return pattern[0];
+		return pattern[patternIndex] ?? DEFAULT_ROW_COUNT;
+	};
+
+	const getResponsiveMaxColumns = (
+		requestedMax: number,
+		availableWidth: number,
+		gap: number,
+	) => {
+		// One global column cap for the whole gallery at the current width.
+		// As the gallery narrows this steps x -> x-1 -> ... -> 1.
+		const columnsThatFit = Math.max(
+			1,
+			Math.floor(
+				(availableWidth + gap) / (MIN_ITEM_WIDTH + gap),
+			),
+		);
+
+		return Math.max(1, Math.min(requestedMax, columnsThatFit));
+	};
+
+	const layoutRow = (row: HTMLElement) => {
+		const items = Array.from(
+			row.querySelectorAll<HTMLElement>(':scope > [data-row-item]'),
+		);
+		if (items.length === 0) return;
+
+		const availableWidth = row.clientWidth;
+		if (availableWidth <= 0) return;
+
+		const gap = getGap();
+		const rowHeight = calculateRowHeight(items, availableWidth, gap);
+		if (rowHeight <= 0) return;
+
+		row.style.setProperty('--row-height', `${rowHeight}px`);
+		row.style.setProperty('--row-gap', `${gap}px`);
+
+		items.forEach((item) => {
+			const width = getAspectRatio(item) * rowHeight;
+			item.style.width = `${width}px`;
+			item.style.height = `${rowHeight}px`;
+			item.style.flex = '0 0 auto';
+		});
+	};
+
+	const rebuildPanelRows = (
+		panel: HTMLElement,
+		gallery: HTMLElement,
+		force = false,
+	) => {
+		const existingRows = panel.querySelector<HTMLElement>('.rows');
+		const source = panel.querySelector<HTMLElement>('[data-row-items]');
+		const holder = source ?? existingRows;
+		if (!holder) return;
+
+		const items = Array.from(
+			holder.querySelectorAll<HTMLElement>('[data-row-item]'),
+		);
+		if (items.length === 0) return;
+
+		const availableWidth = panel.clientWidth || gallery.clientWidth;
+		if (availableWidth <= 0) return;
+
+		const pattern = parsePattern(gallery.dataset.rowPattern);
+		const gap = getGap();
+
+		const requestedMaximum =
+			pattern.length > 0
+				? Math.max(...pattern)
+				: DEFAULT_ROW_COUNT;
+		const responsiveMax = getResponsiveMaxColumns(
+			requestedMaximum,
+			availableWidth,
+			gap,
+		);
+
+		// Avoid rebuilding the DOM repeatedly when a ResizeObserver fires with
+		// the same effective layout conditions.
+		const aspectSignature = items
+			.map((item) => getAspectRatio(item).toFixed(4))
+			.join(',');
+		const signature = [
+			Math.round(availableWidth),
+			gap,
+			pattern.join(','),
+			responsiveMax,
+			aspectSignature,
+		].join('|');
+
+		if (!force && panel.dataset.rowLayoutSignature === signature) {
+			existingRows?.querySelectorAll<HTMLElement>('.image-row').forEach(layoutRow);
+			return;
+		}
+
+		const rows = document.createElement('div');
+		rows.className = 'rows';
+
+		let index = 0;
+		let patternIndex = 0;
+
+		while (index < items.length) {
+			const requested = requestedCountForRow(pattern, patternIndex);
+			const count = Math.max(
+				1,
+				Math.min(
+					requested,
+					responsiveMax,
+					items.length - index,
+				),
+			);
+
+			const row = document.createElement('div');
+			row.className = 'image-row';
+			row.dataset.rowCount = String(count);
+
+			items.slice(index, index + count).forEach((item) => {
+				row.appendChild(item);
+			});
+
+			rows.appendChild(row);
+			index += count;
+			patternIndex += 1;
+		}
+
+		holder.replaceWith(rows);
+		panel.dataset.rowLayoutSignature = signature;
+		rows.querySelectorAll<HTMLElement>('.image-row').forEach(layoutRow);
+	};
+
+	const layoutGalleryRows = (gallery: HTMLElement, force = false) => {
+		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+			// Hidden tab panels have no measurable width. They are rebuilt when
+			// their tab is opened.
+			if (panel.hidden) return;
+			rebuildPanelRows(panel, gallery, force);
+		});
+	};
+
+	const prepareImage = (item: HTMLElement, gallery: HTMLElement) => {
+		const image = item.querySelector<HTMLImageElement>('img');
+		if (!image) return;
+
+		const apply = () => {
+			if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+				item.dataset.aspectRatio = String(
+					image.naturalWidth / image.naturalHeight,
+				);
+			}
+			layoutGalleryRows(gallery, true);
+		};
+
+		if (image.complete && image.naturalWidth > 0) apply();
+		else image.addEventListener('load', apply, { once: true });
+	};
+
+	const prepareRowGallery = (gallery: HTMLElement) => {
+		gallery
+			.querySelectorAll<HTMLElement>('[data-row-item]')
+			.forEach((item) => prepareImage(item, gallery));
+
+		layoutGalleryRows(gallery, true);
+
+		const observer = new ResizeObserver(() => layoutGalleryRows(gallery));
+		observer.observe(gallery);
+	};
+
+	document.addEventListener('gallery:inserted', (event) => {
+		const gallery = (event as CustomEvent<HTMLElement>).detail;
+		if (gallery?.classList.contains('row-gallery')) prepareRowGallery(gallery);
+	});
+
+	const closeRowLightbox = () => {
+		document.querySelector<HTMLElement>('.row-gallery-lightbox')?.remove();
+		document.body.classList.remove('row-gallery-lightbox-open');
+	};
+
+	const openRowLightbox = (item: HTMLElement) => {
+		const image = item.querySelector<HTMLImageElement>('img');
+		if (!image) return;
+
+		closeRowLightbox();
+
+		const overlay = document.createElement('div');
+		overlay.className = 'row-gallery-lightbox';
+		overlay.setAttribute('role', 'dialog');
+		overlay.setAttribute('aria-modal', 'true');
+		overlay.setAttribute('aria-label', image.alt || 'Expanded gallery image');
+
+		const expanded = document.createElement('img');
+		expanded.src = image.currentSrc || image.src;
+		expanded.alt = image.alt;
+
+		overlay.appendChild(expanded);
+		document.body.appendChild(overlay);
+		document.body.classList.add('row-gallery-lightbox-open');
+
+		overlay.addEventListener('click', (event) => {
+			if (event.target === overlay) closeRowLightbox();
+		});
+	};
+
+	document.addEventListener('click', (event) => {
+		const target = event.target as HTMLElement;
+		const item = target.closest<HTMLElement>(
+			'.row-gallery:not([data-gallery-template]) [data-row-item]',
+		);
+		if (item) {
+			openRowLightbox(item);
+			return;
+		}
+
+		const tab = target.closest<HTMLButtonElement>(
+			'.row-gallery:not([data-gallery-template]) [data-tab-button]',
+		);
+		if (!tab) return;
+
+		const gallery = tab.closest<HTMLElement>('.row-gallery');
+		const targetKey = tab.dataset.tabButton;
+		if (!gallery || !targetKey) return;
+
+		gallery.querySelectorAll<HTMLButtonElement>('[data-tab-button]').forEach((item) => {
+			const active = item.dataset.tabButton === targetKey;
+			item.setAttribute('aria-selected', String(active));
+			item.classList.toggle('active', active);
+		});
+
+		gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+			panel.hidden = panel.dataset.tabPanel !== targetKey;
+		});
+
+		requestAnimationFrame(() => layoutGalleryRows(gallery, true));
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') {
+			closeRowLightbox();
+			return;
+		}
+
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+
+		const target = event.target as HTMLElement;
+		const item = target.closest<HTMLElement>(
+			'.row-gallery:not([data-gallery-template]) [data-row-item]',
+		);
+		if (!item) return;
+
+		event.preventDefault();
+		openRowLightbox(item);
+	});
+</script>
+
+<style>
+	.project-explorer {
+		display: grid;
+		gap: 1.5rem;
+		width: 100%;
+		margin: 0;
+	}
+
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.tab-button {
+		appearance: none;
+		border: 1px solid var(--gray-800);
+		background: transparent;
+		border-radius: 999rem;
+		padding: 0.7rem 1.1rem;
+		font: inherit;
+		font-weight: 600;
+		color: var(--gray-400);
+		cursor: pointer;
+		transition:
+			background-color var(--theme-transition),
+			color var(--theme-transition),
+			border-color var(--theme-transition);
+	}
+
+	.tab-button.active,
+	.tab-button[aria-selected='true'] {
+		background: var(--gray-700);
+		border-color: var(--gray-700);
+		color: var(--gray-999);
+	}
+
+	:global(.row-gallery:not([data-gallery-template]) .rows) {
+		display: grid;
+		gap: 1rem;
+		width: 100%;
+	}
+
+	:global(.row-gallery:not([data-gallery-template]) .image-row) {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--row-gap, 1rem);
+		width: 100%;
+		min-width: 0;
+	}
+
+	.row-item {
+		flex: 0 0 auto;
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+		border-radius: 1rem;
+		background: var(--gray-50);
+		cursor: zoom-in;
+	}
+
+	.row-item:focus-visible {
+		outline: 2px solid currentColor;
+		outline-offset: 3px;
+	}
+
+	.row-item img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	:global(.row-gallery-lightbox) {
+		position: fixed;
+		inset: 0;
+		z-index: 10020;
+		display: grid;
+		place-items: center;
+		padding: 5vh 10vw;
+		background: rgba(255, 255, 255, 0.88);
+		cursor: zoom-out;
+	}
+
+	:global(.row-gallery-lightbox img) {
+		display: block;
+		width: auto;
+		height: auto;
+		max-width: 80vw;
+		max-height: 90vh;
+		object-fit: contain;
+		box-shadow: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.12);
+		cursor: default;
+	}
+
+	:global(body.row-gallery-lightbox-open) {
+		overflow: hidden;
+	}
+
+	.empty {
+		padding: 1.5rem;
+		border: 1px dashed var(--gray-800);
+		border-radius: 1rem;
+		color: var(--gray-400);
+	}
+
+	@media (max-width: 42em) {
+		:global(.row-gallery:not([data-gallery-template]) .rows) {
+			gap: 0.6rem;
+		}
+
+		:global(.row-gallery:not([data-gallery-template]) .image-row) {
+			gap: var(--row-gap, 0.6rem);
+		}
+	}
+</style>

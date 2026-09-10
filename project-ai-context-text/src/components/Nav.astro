@@ -1,0 +1,403 @@
+---
+const textLinks: { label: string; href: string }[] = [
+	{ label: 'Home', href: '/' },
+	{ label: 'About', href: '/about/' },
+	{ label: 'Contact me', href: '/contact/' },
+];
+
+const isCurrentPage = (href: string) => {
+	let pathname = Astro.url.pathname.replace(import.meta.env.BASE_URL, '');
+	if (pathname.at(0) !== '/') pathname = '/' + pathname;
+	if (pathname.at(-1) !== '/') pathname += '/';
+	return pathname === href || (href !== '/' && pathname.startsWith(href));
+};
+---
+
+<nav aria-label="Primary navigation">
+	<a href="/" class="site-logo" aria-label="Paige Berry home">
+		<span class="print-stage" aria-hidden="true">
+			<span class="impression">
+				<img src="/assets/PBLogo.jpg" alt="" />
+			</span>
+
+			<span class="type-block">
+				<img src="/assets/PBLogo.jpg" alt="" />
+			</span>
+		</span>
+	</a>
+
+	<ul class="nav-items">
+		{
+			textLinks.map(({ label, href }) => (
+				<li>
+					<a
+						aria-current={isCurrentPage(href) ? 'page' : null}
+						class="link"
+						href={href}
+					>
+						{label}
+					</a>
+				</li>
+			))
+		}
+
+		<li class="doc-nav-item" hidden>
+			<button class="link prev-title-link" type="button">Prev title</button>
+		</li>
+		<li class="doc-nav-item" hidden>
+			<button class="link next-title-link" type="button">Next title</button>
+		</li>
+		<li class="top-item" hidden>
+			<button class="link top-link" type="button">Top</button>
+		</li>
+	</ul>
+</nav>
+
+<script>
+	const initPersistentNav = () => {
+		const nav = document.querySelector<HTMLElement>('.nav-items');
+		const topItem = document.querySelector<HTMLElement>('.top-item');
+		const topButton = document.querySelector<HTMLButtonElement>('.top-link');
+		const docNavItems = Array.from(
+			document.querySelectorAll<HTMLElement>('.doc-nav-item'),
+		);
+		const prevButton =
+			document.querySelector<HTMLButtonElement>('.prev-title-link');
+		const nextButton =
+			document.querySelector<HTMLButtonElement>('.next-title-link');
+
+		if (!nav || !topItem || !topButton || !prevButton || !nextButton) return;
+		if (nav.dataset.enhanced === 'true') return;
+		nav.dataset.enhanced = 'true';
+
+		// Treat Markdown #, ## and ### headings as navigable document titles.
+		// Numbered headings are included automatically because their visible
+		// numbering is simply part of the heading text.
+		const headings = Array.from(
+			document.querySelectorAll<HTMLElement>(
+				'.project-content h1, .project-content h2, .project-content h3, ' +
+				'.permanent-page h1, .permanent-page h2, .permanent-page h3',
+			),
+		).filter((heading, index, all) => all.indexOf(heading) === index);
+
+		const hasDocumentNavigation = headings.length >= 4;
+
+		for (const item of docNavItems) {
+			item.hidden = !hasDocumentNavigation;
+		}
+
+		const reducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)',
+		);
+
+		const scrollToElement = (element: HTMLElement) => {
+			const targetTop =
+				window.scrollY +
+				element.getBoundingClientRect().top -
+				window.innerHeight * 0.25;
+
+			window.scrollTo({
+				top: Math.max(0, targetTop),
+				behavior: reducedMotion.matches ? 'auto' : 'smooth',
+			});
+		};
+
+		const getCurrentHeadingIndex = () => {
+			// Match the navigation landing position: a heading is considered
+			// current once it reaches roughly one quarter of the viewport.
+			const threshold = window.innerHeight * 0.25 + 8;
+			let current = -1;
+
+			for (let index = 0; index < headings.length; index += 1) {
+				if (headings[index].getBoundingClientRect().top <= threshold) {
+					current = index;
+				} else {
+					break;
+				}
+			}
+
+			return current;
+		};
+
+		const updateControls = () => {
+			topItem.hidden = window.scrollY < 120;
+
+			if (!hasDocumentNavigation) return;
+
+			const current = getCurrentHeadingIndex();
+			const previousIndex = current - 1;
+			const nextIndex = current + 1;
+
+			prevButton.disabled = previousIndex < 0;
+			nextButton.disabled = nextIndex >= headings.length;
+		};
+
+		prevButton.addEventListener('click', () => {
+			const current = getCurrentHeadingIndex();
+			const target = current - 1;
+
+			if (target >= 0) {
+				scrollToElement(headings[target]);
+			}
+		});
+
+		nextButton.addEventListener('click', () => {
+			const current = getCurrentHeadingIndex();
+			const target = current + 1;
+
+			if (target < headings.length) {
+				scrollToElement(headings[target]);
+			}
+		});
+
+		topButton.addEventListener('click', () => {
+			window.scrollTo({
+				top: 0,
+				behavior: reducedMotion.matches ? 'auto' : 'smooth',
+			});
+		});
+
+		updateControls();
+		window.addEventListener('scroll', updateControls, { passive: true });
+	};
+
+	initPersistentNav();
+	document.addEventListener('astro:page-load', initPersistentNav);
+</script>
+
+<style>
+	nav {
+		position: relative;
+		z-index: 9999;
+		font-family: var(--font-brand);
+		font-weight: 500;
+		margin-bottom: 3.5rem;
+		padding: 1.5rem;
+	}
+
+	/* =========================================
+	   PB BLOCK PRINT
+	   ========================================= */
+
+	.site-logo {
+		display: inline-flex;
+		align-items: center;
+		text-decoration: none;
+	}
+
+	.print-stage {
+		position: relative;
+		display: block;
+		width: 5.7rem;
+		height: 2.5rem;
+	}
+
+	.type-block,
+	.impression {
+		position: absolute;
+		top: 0;
+		width: 2.5rem;
+		height: 2.5rem;
+	}
+
+	.type-block {
+		left: 0;
+		z-index: 2;
+		transform-origin: center;
+	}
+
+	.impression {
+		left: 3.1rem;
+		z-index: 1;
+		opacity: 0;
+	}
+
+	.type-block img,
+	.impression img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.site-logo:hover .type-block,
+	.site-logo:focus-visible .type-block {
+		animation: block-print 2.1s ease-in-out forwards;
+	}
+
+	.site-logo:hover .impression,
+	.site-logo:focus-visible .impression {
+		animation: impression-print 2.1s ease-out forwards;
+	}
+
+	@keyframes block-print {
+		0% {
+			transform: translateX(0) scaleX(1);
+			filter: none;
+		}
+
+		35% {
+			transform: translateX(1.6rem) scaleX(1);
+			filter: none;
+		}
+
+		55%,
+		62% {
+			transform: translateX(3.1rem) scaleX(1);
+			filter: none;
+		}
+
+		72% {
+			transform: translateX(2.2rem) scaleX(0.45);
+			filter: none;
+		}
+
+		78% {
+			transform: translateX(1.6rem) scaleX(0.04);
+			filter: none;
+		}
+
+		79% {
+			transform: translateX(1.5rem) scaleX(-0.04);
+			filter: invert(1);
+		}
+
+		88% {
+			transform: translateX(0.7rem) scaleX(-0.65);
+			filter: invert(1);
+		}
+
+		100% {
+			transform: translateX(0) scaleX(-1);
+			filter: invert(1);
+		}
+	}
+
+	@keyframes impression-print {
+		0%,
+		57% {
+			opacity: 0;
+		}
+
+		63% {
+			opacity: 0.25;
+		}
+
+		70%,
+		100% {
+			opacity: 1;
+		}
+	}
+
+	/* =========================================
+	   PERSISTENT NAVIGATION PILLS
+	   ========================================= */
+
+	.nav-items {
+		position: fixed;
+		top: 0.75rem;
+		left: 13.75vw;
+		right: auto;
+		z-index: 10000;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.25rem;
+		margin: 0;
+		padding: 0.5rem 0.5625rem;
+		list-style: none;
+		font-size: var(--text-sm);
+		line-height: 1.2;
+		border: 1px solid var(--gray-800);
+		border-radius: 999rem;
+		background: var(--gray-999);
+		box-shadow: var(--shadow-md);
+	}
+
+	.nav-items::before {
+		position: absolute;
+		inset: -1px;
+		content: '';
+		background: var(--gray-800);
+		border-radius: 999rem;
+		z-index: -1;
+	}
+
+	.top-item[hidden],
+	.doc-nav-item[hidden] {
+		display: none;
+	}
+
+	.link {
+		display: inline-block;
+		padding: 0.5rem 1rem;
+		border: 0;
+		border-radius: 999rem;
+		color: var(--gray-300);
+		background: transparent;
+		font: inherit;
+		line-height: inherit;
+		text-decoration: none;
+		cursor: pointer;
+		transition:
+			color var(--theme-transition),
+			background-color var(--theme-transition);
+	}
+
+	.link:hover,
+	.link:focus-visible {
+		color: var(--gray-0);
+		background-color: var(--gray-50);
+		outline: none;
+	}
+
+	.link:disabled {
+		color: var(--gray-500);
+		background: transparent;
+		cursor: default;
+		opacity: 0.5;
+	}
+
+	.link[aria-current='page'] {
+		color: var(--gray-999);
+		background-color: var(--gray-700);
+	}
+
+	@media (min-width: 50em) {
+		nav {
+			padding: 2.5rem 5rem;
+		}
+
+		.nav-items {
+			top: 0.75rem;
+		}
+	}
+
+	@media (max-width: 49.99em) {
+		.nav-items {
+			top: 0.75rem;
+			left: 5rem;
+			width: max-content;
+			max-width: calc(100% - 3rem);
+		}
+
+		.link {
+			padding-inline: 0.75rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.site-logo:hover .type-block,
+		.site-logo:hover .impression,
+		.site-logo:focus-visible .type-block,
+		.site-logo:focus-visible .impression {
+			animation: none;
+		}
+	}
+
+	@media (forced-colors: active) {
+		.link[aria-current='page'] {
+			color: SelectedItem;
+		}
+	}
+</style>

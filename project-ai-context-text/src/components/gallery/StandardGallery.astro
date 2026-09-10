@@ -1,0 +1,267 @@
+---
+/**
+ * StandardGallery
+ *
+ * Owns the existing "viewer + thumbnail navigation" presentation.
+ * It receives already-resolved gallery data. It does NOT discover files,
+ * parse Markdown markers, understand T filenames, or read frontmatter.
+ *
+ * ProjectExplorer renders this once as a hidden source template and clones
+ * only the requested groups into the Markdown at runtime.
+ */
+
+import type { GalleryGroup } from './gallery';
+
+interface Props {
+	groups: GalleryGroup[];
+	projectTitle: string;
+	source?: boolean;
+}
+
+const { groups, projectTitle, source = false } = Astro.props;
+const firstGroupKey = groups[0]?.key ?? '';
+const showTabs = groups.length > 1 || Boolean(groups[0]?.label.trim());
+---
+
+<div
+	class="project-explorer standard-gallery"
+	data-gallery-template={source ? 'standard' : undefined}
+	hidden={source}
+>
+	{showTabs && (
+		<div class="tabs" role="tablist" aria-label="Project exploration tabs">
+			{groups.map(({ key, label }) => {
+				const isFirst = key === firstGroupKey;
+				return (
+					<button
+						type="button"
+						role="tab"
+						aria-selected={isFirst ? 'true' : 'false'}
+						data-tab-button={key}
+						class:list={['tab-button', { active: isFirst }]}
+					>
+						{label}
+					</button>
+				);
+			})}
+		</div>
+	)}
+
+	{groups.map(({ key, label, items }) => {
+		const isFirst = key === firstGroupKey;
+		return (
+			<section
+				class="gallery-panel"
+				role="tabpanel"
+				aria-label={`${label} gallery`}
+				data-tab-panel={key}
+				hidden={!isFirst}
+			>
+				{items.length > 0 ? (
+					<div class="gallery-layout">
+						<div class="thumbs" aria-label={`${label} thumbnails`}>
+							{items.map((image, index) => (
+								<button
+									type="button"
+									class:list={['thumb', { selected: index === 0 && isFirst }]}
+									data-full={image.url}
+									data-alt={`${projectTitle} ${label} ${index + 1}`}
+									aria-label={`View ${label} image ${index + 1}`}
+									aria-pressed={index === 0 && isFirst ? 'true' : 'false'}
+								>
+									<img src={image.url} alt="" width="180" height="120" loading="lazy" />
+								</button>
+							))}
+						</div>
+
+						{items[0] && (
+							<figure class="viewer">
+								<img
+									data-viewer={key}
+									src={items[0].url}
+									alt={`${projectTitle} ${label}`}
+									loading="lazy"
+								/>
+							</figure>
+						)}
+					</div>
+				) : (
+					<p class="empty">No images available yet.</p>
+				)}
+			</section>
+		);
+	})}
+</div>
+
+<script>
+	/**
+	 * Event delegation is intentional.
+	 *
+	 * ProjectExplorer clones gallery templates after Astro has rendered.
+	 * Listening on document means cloned tabs/thumbs work without manually
+	 * re-running an initialiser for every new gallery instance.
+	 */
+	document.addEventListener('click', (event) => {
+		const target = event.target as HTMLElement;
+
+		const tab = target.closest<HTMLButtonElement>(
+			'.standard-gallery:not([data-gallery-template]) [data-tab-button]',
+		);
+		if (tab) {
+			const gallery = tab.closest<HTMLElement>('.standard-gallery');
+			const targetKey = tab.dataset.tabButton;
+			if (!gallery || !targetKey) return;
+
+			gallery.querySelectorAll<HTMLButtonElement>('[data-tab-button]').forEach((item) => {
+				const active = item.dataset.tabButton === targetKey;
+				item.setAttribute('aria-selected', String(active));
+				item.classList.toggle('active', active);
+			});
+
+			gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+				panel.hidden = panel.dataset.tabPanel !== targetKey;
+			});
+			return;
+		}
+
+		const thumb = target.closest<HTMLButtonElement>(
+			'.standard-gallery:not([data-gallery-template]) [data-full]',
+		);
+		if (!thumb) return;
+
+		const panel = thumb.closest<HTMLElement>('[data-tab-panel]');
+		const viewer = panel?.querySelector<HTMLImageElement>('[data-viewer]');
+		const nextSrc = thumb.dataset.full;
+		const nextAlt = thumb.dataset.alt || viewer?.getAttribute('alt') || '';
+
+		if (viewer && nextSrc) {
+			viewer.src = nextSrc;
+			viewer.alt = nextAlt;
+		}
+
+		panel?.querySelectorAll<HTMLButtonElement>('[data-full]').forEach((item) => {
+			const selected = item === thumb;
+			item.setAttribute('aria-pressed', String(selected));
+			item.classList.toggle('selected', selected);
+		});
+	});
+</script>
+
+<style>
+	.project-explorer {
+		display: grid;
+		gap: 1.5rem;
+		width: 80%;
+		margin-inline: auto;
+	}
+
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.tab-button {
+		appearance: none;
+		border: 1px solid var(--gray-800);
+		background: transparent;
+		border-radius: 999rem;
+		padding: 0.7rem 1.1rem;
+		font: inherit;
+		font-weight: 600;
+		color: var(--gray-400);
+		cursor: pointer;
+		transition:
+			background-color var(--theme-transition),
+			color var(--theme-transition),
+			border-color var(--theme-transition);
+	}
+
+	.tab-button.active,
+	.tab-button[aria-selected='true'] {
+		background: var(--gray-700);
+		border-color: var(--gray-700);
+		color: var(--gray-999);
+	}
+
+	.gallery-panel {
+		transition: opacity 220ms ease;
+	}
+
+	.gallery-layout {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.thumbs {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.thumb {
+		padding: 0;
+		border: 1px solid var(--gray-800);
+		border-radius: 0.9rem;
+		overflow: hidden;
+		background: var(--gray-999);
+		cursor: pointer;
+		transition:
+			border-color var(--theme-transition),
+			transform var(--theme-transition);
+	}
+
+	.thumb img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.thumb.selected,
+	.thumb[aria-pressed='true'] {
+		border-color: var(--gray-0);
+	}
+
+	.viewer {
+		margin: 0;
+		border-radius: 1.25rem;
+		overflow: hidden;
+		background: var(--gray-50);
+		border: 1px solid var(--gray-800);
+	}
+
+	.viewer img {
+		display: block;
+		width: 100%;
+		height: min(70vh, 48rem);
+		object-fit: contain;
+		background: var(--gray-50);
+	}
+
+	.empty {
+		padding: 1.5rem;
+		border: 1px dashed var(--gray-800);
+		border-radius: 1rem;
+		color: var(--gray-400);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.gallery-panel,
+		.tab-button,
+		.thumb {
+			transition: none;
+		}
+	}
+
+	@media (min-width: 50em) {
+		.gallery-layout {
+			grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.thumbs {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

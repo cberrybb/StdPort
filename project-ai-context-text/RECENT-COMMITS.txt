@@ -1,0 +1,5 @@
+1883246 Fix galleries without labels and responsive media
+7889fb1 Fix galleries without labels and responsive media
+c66a8b0 Fix galleries without labels and responsive media
+9a37774 Add responsive image and video sizing
+0a61eb9 Update project content and documentation

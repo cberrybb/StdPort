@@ -1,0 +1,391 @@
+---
+/**
+ * TileGallery
+ *
+ * Owns the square/tile presentation only.
+ *
+ * Behaviour preserved from the original ProjectExplorer:
+ * - A#T is preferred for the square artwork.
+ * - Missing T falls back to A# and shows an authoring warning.
+ * - /p suppresses missing-T and missing-copy warnings.
+ * - line1 / line2 come from display-position metadata.
+ * - clicking a tile expands the BASE image, not the square T variant.
+ *
+ * This component does NOT discover assets or parse Markdown. It renders
+ * deterministic gallery data supplied by gallery.ts.
+ */
+
+import type { GalleryGroup } from './gallery';
+
+interface Props {
+	groups: GalleryGroup[];
+	projectTitle: string;
+	source?: boolean;
+}
+
+const { groups, projectTitle, source = false } = Astro.props;
+const firstGroupKey = groups[0]?.key ?? '';
+const showTabs = groups.length > 1 || Boolean(groups[0]?.label.trim());
+---
+
+<div
+	class="project-explorer tile-gallery"
+	data-gallery-template={source ? 'tile' : undefined}
+	hidden={source}
+>
+	{showTabs && (
+		<div class="tabs" role="tablist" aria-label="Project exploration tabs">
+			{groups.map(({ key, label }) => {
+				const isFirst = key === firstGroupKey;
+				return (
+					<button
+						type="button"
+						role="tab"
+						aria-selected={isFirst ? 'true' : 'false'}
+						data-tab-button={key}
+						class:list={['tab-button', { active: isFirst }]}
+					>
+						{label}
+					</button>
+				);
+			})}
+		</div>
+	)}
+
+	{groups.map(({ key, label, items }) => {
+		const isFirst = key === firstGroupKey;
+		return (
+			<section
+				class="gallery-panel"
+				role="tabpanel"
+				aria-label={`${label} gallery`}
+				data-tab-panel={key}
+				hidden={!isFirst}
+			>
+				{items.length > 0 ? (
+					<div class="thumbs">
+						{items.map((image, index) => {
+							const alt = `${projectTitle} ${label} ${index + 1}`;
+							return (
+								<button
+									type="button"
+									class="thumb tile-expandable"
+									data-full={image.url}
+									data-has-tile={image.tileUrl ? 'true' : 'false'}
+									data-missing-label={`${key}${image.order}T missing`}
+									data-position={String(image.position)}
+									data-line1={image.line1}
+									data-line2={image.line2}
+									data-alt={alt}
+									aria-label={`${alt}. Click to expand`}
+								>
+									<img src={image.tileUrl || image.url} alt={alt} loading="lazy" />
+
+									{!image.tileUrl && (
+										<span class="tile-missing" data-authoring-warning>
+											{key}{image.order}T missing
+										</span>
+									)}
+
+									<span class="tile-copy" data-tile-copy>
+										<span class="tile-line tile-line1" data-line1-output>
+											{image.line1 || `Tile ${image.position} line1 missing`}
+										</span>
+										<span class="tile-line tile-line2" data-line2-output>
+											{image.line2 || `Tile ${image.position} line2 missing`}
+										</span>
+									</span>
+								</button>
+							);
+						})}
+					</div>
+				) : (
+					<p class="empty">No images available yet.</p>
+				)}
+			</section>
+		);
+	})}
+</div>
+
+<script>
+	/**
+	 * ProjectExplorer marks cloned /p instances with data-publish-mode.
+	 * We clean those clones after insertion so authoring-only placeholders
+	 * never appear in publish mode.
+	 */
+	const preparePublishGallery = (gallery: HTMLElement) => {
+		if (!gallery.hasAttribute('data-publish-mode')) return;
+
+		gallery.querySelectorAll('[data-authoring-warning]').forEach((node) => node.remove());
+
+		gallery.querySelectorAll<HTMLElement>('.thumb').forEach((thumb) => {
+			const line1 = thumb.dataset.line1?.trim() ?? '';
+			const line2 = thumb.dataset.line2?.trim() ?? '';
+			const copy = thumb.querySelector<HTMLElement>('[data-tile-copy]');
+			const line1Output = thumb.querySelector<HTMLElement>('[data-line1-output]');
+			const line2Output = thumb.querySelector<HTMLElement>('[data-line2-output]');
+
+			if (line1Output) {
+				if (line1) line1Output.textContent = line1;
+				else line1Output.remove();
+			}
+
+			if (line2Output) {
+				if (line2) line2Output.textContent = line2;
+				else line2Output.remove();
+			}
+
+			if (!line1 && !line2) copy?.remove();
+		});
+	};
+
+	document.addEventListener('gallery:inserted', (event) => {
+		const gallery = (event as CustomEvent<HTMLElement>).detail;
+		if (gallery?.classList.contains('tile-gallery')) preparePublishGallery(gallery);
+	});
+
+	/**
+	 * One delegated click handler supports every cloned tile gallery.
+	 * The lightbox deliberately opens data-full (A#), never the T crop.
+	 */
+	document.addEventListener('click', (event) => {
+		const target = event.target as HTMLElement;
+
+		const tab = target.closest<HTMLButtonElement>(
+			'.tile-gallery:not([data-gallery-template]) [data-tab-button]',
+		);
+		if (tab) {
+			const gallery = tab.closest<HTMLElement>('.tile-gallery');
+			const targetKey = tab.dataset.tabButton;
+			if (!gallery || !targetKey) return;
+
+			gallery.querySelectorAll<HTMLButtonElement>('[data-tab-button]').forEach((item) => {
+				const active = item.dataset.tabButton === targetKey;
+				item.setAttribute('aria-selected', String(active));
+				item.classList.toggle('active', active);
+			});
+
+			gallery.querySelectorAll<HTMLElement>('[data-tab-panel]').forEach((panel) => {
+				panel.hidden = panel.dataset.tabPanel !== targetKey;
+			});
+			return;
+		}
+
+		const thumb = target.closest<HTMLButtonElement>(
+			'.tile-gallery:not([data-gallery-template]) .tile-expandable',
+		);
+		if (!thumb) return;
+
+		event.preventDefault();
+
+		const full = thumb.dataset.full;
+		const alt = thumb.dataset.alt ?? '';
+		const position = thumb.dataset.position ?? '?';
+		if (!full) return;
+
+		const overlay = document.createElement('div');
+		overlay.className = 'gallery-lightbox';
+		overlay.setAttribute('role', 'dialog');
+		overlay.setAttribute('aria-modal', 'true');
+		overlay.setAttribute('aria-label', alt || `Expanded tile ${position}`);
+
+		const expanded = document.createElement('img');
+		expanded.src = full;
+		expanded.alt = alt;
+
+		const close = document.createElement('button');
+		close.type = 'button';
+		close.className = 'gallery-lightbox-close';
+		close.setAttribute('aria-label', 'Close expanded image');
+		close.textContent = '×';
+
+		const dismiss = () => {
+			overlay.remove();
+			document.removeEventListener('keydown', onKeyDown);
+		};
+
+		const onKeyDown = (keyEvent: KeyboardEvent) => {
+			if (keyEvent.key === 'Escape') dismiss();
+		};
+
+		close.addEventListener('click', dismiss);
+		overlay.addEventListener('click', (overlayEvent) => {
+			if (overlayEvent.target === overlay) dismiss();
+		});
+
+		document.addEventListener('keydown', onKeyDown);
+		overlay.append(expanded, close);
+		document.body.appendChild(overlay);
+		close.focus();
+	});
+</script>
+
+<style>
+	.project-explorer {
+		display: grid;
+		gap: 1.5rem;
+		width: 80%;
+		margin-inline: auto;
+	}
+
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.tab-button {
+		appearance: none;
+		border: 1px solid var(--gray-800);
+		background: transparent;
+		border-radius: 999rem;
+		padding: 0.7rem 1.1rem;
+		font: inherit;
+		font-weight: 600;
+		color: var(--gray-400);
+		cursor: pointer;
+		transition:
+			background-color var(--theme-transition),
+			color var(--theme-transition),
+			border-color var(--theme-transition);
+	}
+
+	.tab-button.active,
+	.tab-button[aria-selected='true'] {
+		background: var(--gray-700);
+		border-color: var(--gray-700);
+		color: var(--gray-999);
+	}
+
+	.gallery-panel {
+		transition: opacity 220ms ease;
+	}
+
+	.thumbs {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.thumb {
+		position: relative;
+		padding: 0;
+		border: 1px solid var(--gray-800);
+		border-radius: 1rem;
+		overflow: hidden;
+		background: var(--gray-999);
+		aspect-ratio: 1 / 1;
+		cursor: zoom-in;
+		transition:
+			border-color var(--theme-transition),
+			transform var(--theme-transition);
+	}
+
+	.thumb img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.tile-missing {
+		position: absolute;
+		top: 0.6rem;
+		left: 0.6rem;
+		padding: 0.35rem 0.55rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.9);
+		color: #111;
+		font-size: 0.7rem;
+		font-weight: 700;
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	.tile-copy {
+		position: absolute;
+		inset: auto 0 0 0;
+		display: grid;
+		gap: 0.15rem;
+		padding: 0.7rem 0.8rem;
+		background: rgba(255, 255, 255, 0.9);
+		color: #111;
+		text-align: center;
+		pointer-events: none;
+	}
+
+	.tile-line {
+		display: block;
+		line-height: 1.2;
+	}
+
+	.tile-line1 {
+		font-weight: 700;
+	}
+
+	.tile-line2 {
+		font-size: 0.82rem;
+	}
+
+	.empty {
+		padding: 1.5rem;
+		border: 1px dashed var(--gray-800);
+		border-radius: 1rem;
+		color: var(--gray-400);
+	}
+
+	:global(.gallery-lightbox) {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		display: grid;
+		place-items: center;
+		padding: 2rem;
+		background: rgba(0, 0, 0, 0.88);
+	}
+
+	:global(.gallery-lightbox img) {
+		display: block;
+		max-width: min(94vw, 120rem);
+		max-height: 90vh;
+		width: auto;
+		height: auto;
+		object-fit: contain;
+	}
+
+	:global(.gallery-lightbox-close) {
+		position: fixed;
+		top: 1rem;
+		right: 1rem;
+		width: 2.75rem;
+		height: 2.75rem;
+		border: 0;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.92);
+		color: #111;
+		font: inherit;
+		font-size: 1.75rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.gallery-panel,
+		.tab-button,
+		.thumb {
+			transition: none;
+		}
+	}
+
+	@media (min-width: 34em) {
+		.thumbs {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 64em) {
+		.thumbs {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+</style>

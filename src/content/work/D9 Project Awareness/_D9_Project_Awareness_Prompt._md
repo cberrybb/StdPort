@@ -1,0 +1,1167 @@
+---
+title: "D9: Project Awareness Prompt"
+description: |
+  A reusable prompt for bringing an AI into an existing project at any stage,
+  establishing current reality from evidence, and creating a compact context package.
+publishDate: "2026-09-01 00:00:00"
+tags:
+  - AI
+  - Commands
+  - Context
+  - Workflow
+tileFilter: "#5e7bb0"
+tileL1: "D9 Project Awareness"
+tileL2: "The prompt that tells AI how to help"
+---
+
+# Project Awareness Prompt
+
+Use this when bringing an AI into an existing project, whether the
+project is new, half-built, mature, messy, documented, undocumented,
+working or broken.
+
+Assumption: the project is already open in VS Code and you can run
+commands in its terminal.
+
+The purpose is not to explain the project manually.
+
+The purpose is to let the AI **discover enough evidence to establish the
+current reality of the project for itself**.
+
+Copy the entire prompt below into the AI.
+
+``` text
+
+PROJECT AWARENESS MODE
+
+I have an existing project open in VS Code.
+
+Your immediate job is NOT to modify it, redesign it, refactor it, fix it,
+
+recommend features, or start implementing anything.
+
+Your first job is to establish an accurate working understanding of the
+
+project as it exists RIGHT NOW.
+
+Assume:
+
+- the project may be at any stage of development;
+
+- it may contain abandoned experiments, backups, obsolete files or duplicate implementations;
+
+- documentation may be incomplete, stale, aspirational or contradictory;
+
+- filenames may not reliably indicate which implementation is live;
+
+- the current working state may differ from what documentation claims;
+
+- Git may contain committed and uncommitted work;
+
+- some files may contain narrative or design reasoning that is important even
+
+  if they are not executable source;
+
+- the project may contain real examples, fixtures or content that reveal the
+
+  system more accurately than abstract documentation;
+
+- generated folders, dependencies and caches may be large but useless for
+
+  understanding the project;
+
+- I should not have to manually reconstruct the architecture for you.
+
+Treat PROJECT REALITY as something to discover from evidence, not something
+
+to infer confidently from filenames or from this prompt.
+
+Our objective is to create a compact but high-value representation of the
+
+project that gives you enough awareness to collaborate competently.
+
+EFFICIENCY IS A PRIMARY CONSTRAINT.
+
+Optimize for:
+
+    project understanding gained
+
+    -----------------------------
+
+    context size + human effort
+
+Prefer cheap, high-information text before expensive bulk context.
+
+In particular, Markdown and other small text documentation should normally be
+
+included broadly because it is inexpensive and may contain the project's
+
+purpose, history, decisions, conventions, current state or intended direction.
+
+Do not spend excessive effort deciding which `.md` files might matter when
+
+including them all is cheap.
+
+Conversely, be selective with large files and binary assets. A few megabytes
+
+of images, videos, archives, generated output or duplicated assets can consume
+
+far more context-transfer cost while adding less project awareness than a
+
+directory listing and the surrounding text/source files.
+
+Default bias:
+
+- INCLUDE broadly: `.md`, `.txt`, source code, configuration, schemas, scripts
+
+  and other reasonably small human-readable files;
+
+- SELECT carefully: images and other binaries when their actual contents are
+
+  needed to understand behaviour;
+
+- REPRESENT BY NAME/LISTING where possible: large asset collections whose
+
+  filenames and structure are informative but whose bytes are not;
+
+- EXCLUDE: dependencies, generated output, caches, archives, Git internals and
+
+  other high-volume/low-information material.
+
+Do not optimize for the smallest ZIP as an end in itself.
+
+Optimize for the smallest practical package that avoids losing inexpensive,
+
+high-value project knowledge.
+
+--------------------------------------------------
+
+PHASE 1 — DISCOVER THE ENVIRONMENT
+
+--------------------------------------------------
+
+Start by giving me ONE copy-and-paste terminal command appropriate for the
+
+terminal/environment I appear to be using.
+
+Its purpose is to produce a useful project tree.
+
+The tree should:
+
+- show files and directories;
+
+- preserve enough structure to understand the project;
+
+- exclude obvious dependency directories;
+
+- exclude build output;
+
+- exclude caches;
+
+- exclude Git internals;
+
+- exclude other obvious generated noise where appropriate;
+
+- NOT alter the project.
+
+If you cannot know my shell from the available context, give me the shortest
+
+safe command to identify it first.
+
+Do not ask me to upload the whole project.
+
+Do not decide what belongs in the context package before inspecting the tree.
+
+Do not give me commands for later phases yet.
+
+Give me only the command needed for this phase and a very short statement of
+
+what I should return to you.
+
+WAIT for my result.
+
+--------------------------------------------------
+
+PHASE 2 — READ THE SHAPE OF THE PROJECT
+
+--------------------------------------------------
+
+When I return the tree, inspect it before asking for more information.
+
+From the tree, determine:
+
+- likely framework/language/tooling;
+
+- important root configuration;
+
+- likely entry points;
+
+- source directories;
+
+- content/data directories;
+
+- documentation;
+
+- tests;
+
+- scripts;
+
+- styles;
+
+- assets;
+
+- examples or fixtures;
+
+- possible duplicate/legacy implementations;
+
+- files whose names suggest project instructions or AI instructions;
+
+- areas where the live implementation is ambiguous.
+
+Do NOT assume that every apparently important file needs to be uploaded.
+
+Select context based on information value.
+
+Prefer the smallest set of files that can establish the project accurately.
+
+--------------------------------------------------
+
+PHASE 3 — PRESERVE THE NARRATIVE
+
+--------------------------------------------------
+
+Treat human-readable documentation as first-class project context.
+
+Look for Markdown, text or similar files that may contain:
+
+- project purpose;
+
+- origin or narrative;
+
+- requirements;
+
+- design reasoning;
+
+- methodology;
+
+- workflow;
+
+- conventions;
+
+- instructions;
+
+- plans;
+
+- progress;
+
+- TODOs;
+
+- decisions;
+
+- known problems;
+
+- experiments;
+
+- changelogs;
+
+- AI collaboration instructions;
+
+- notes explaining WHY the project works the way it does.
+
+Unless there is a strong reason not to, include these files in the context
+
+package.
+
+For Markdown specifically, default to including ALL `.md` files that belong to
+
+the project, excluding obvious dependency/generated/cache directories.
+
+Markdown is normally cheap context. Missing one important design note,
+
+instruction, progress record or piece of project narrative is usually a worse
+
+trade than including several irrelevant small Markdown files.
+
+Apply the same principle to other small text documentation where practical.
+
+Do not dismiss them as website copy merely because they live inside a content
+
+directory.
+
+At the same time, distinguish between:
+
+1\. evidence of CURRENT implementation;
+
+2\. documentation of INTENT;
+
+3\. historical narrative;
+
+4\. speculative/future plans.
+
+Do not silently treat those categories as equivalent.
+
+--------------------------------------------------
+
+PHASE 4 — FIND THE IMPLEMENTATION
+
+--------------------------------------------------
+
+Select the source files required to understand how the project actually works.
+
+Prioritize files that establish:
+
+- application entry points;
+
+- routing;
+
+- content/data models;
+
+- schemas;
+
+- configuration;
+
+- core components/modules;
+
+- important utilities;
+
+- global styling or presentation rules where relevant;
+
+- build/runtime scripts;
+
+- package dependencies;
+
+- conventions that are implemented in code.
+
+Trace important imports or references where necessary.
+
+If the tree suggests multiple implementations of the same feature, include
+
+enough evidence to determine which is live.
+
+Do not decide that the newest-looking filename is automatically current.
+
+Where possible, use imports, routes, configuration, Git state or other direct
+
+evidence to identify the active path.
+
+--------------------------------------------------
+
+PHASE 5 — INCLUDE REAL EXAMPLES
+
+--------------------------------------------------
+
+Include representative real content, fixtures, examples or test cases when
+
+they reveal how the system is actually used.
+
+A real working example can be more valuable than several explanatory files.
+
+Prefer examples that exercise important conventions or features.
+
+Do not include a huge asset library merely because it exists.
+
+Treat large/binary material differently from text.
+
+Before including images, video, audio, archives, datasets or other potentially
+
+large files, ask whether their BYTES are necessary for project awareness.
+
+If filenames, dimensions, relationships or presence are enough, preserve that
+
+information through the tree or a lightweight listing instead.
+
+Include representative binaries only when seeing the actual asset materially
+
+improves understanding of the implementation or a real example.
+
+A context package should not become tens or hundreds of megabytes merely to
+
+prove that an asset folder exists.
+
+--------------------------------------------------
+
+PHASE 6 — CAPTURE CURRENT STATE
+
+--------------------------------------------------
+
+Where available and useful, include lightweight evidence of current project
+
+state such as:
+
+- Git status;
+
+- current branch;
+
+- recent commit summary;
+
+- package manifest;
+
+- lockfile only if dependency resolution matters;
+
+- project tree;
+
+- relevant configuration.
+
+Uncommitted changes matter.
+
+Do not assume the committed repository is identical to the working project.
+
+If Git is available, the context should make it possible to distinguish a
+
+known committed state from current local changes.
+
+Do not modify, commit, reset, clean or stage anything.
+
+--------------------------------------------------
+
+PHASE 7 — EXCLUDE LOW-VALUE MATERIAL
+
+--------------------------------------------------
+
+Normally exclude:
+
+- node\_modules or equivalent dependencies;
+
+- build output;
+
+- caches;
+
+- framework-generated directories;
+
+- Git internals;
+
+- temporary files;
+
+- large binary collections that do not aid understanding;
+
+- redundant copies when one canonical file is clearly sufficient;
+
+- secrets;
+
+- credentials;
+
+- environment values containing private keys, tokens or passwords.
+
+Do not package secrets even if they are technically part of the project.
+
+If configuration depends on environment variables, include a safe example or
+
+the variable NAMES where available, not secret values.
+
+--------------------------------------------------
+
+PHASE 8 — IDENTIFY UNCERTAINTY
+
+--------------------------------------------------
+
+Before creating the package, notice contradictions and ambiguity.
+
+Examples:
+
+- documentation describes something the code does not appear to implement;
+
+- two components appear to implement the same feature;
+
+- a backup may be confused with the live file;
+
+- a TODO claims something is unfinished although the code appears to contain it;
+
+- the working tree contains changes not reflected in documentation;
+
+- examples use conventions that differ from written instructions.
+
+Do not try to resolve uncertainty by inventing a story.
+
+Preserve enough evidence in the package to investigate it later.
+
+If one small additional command or file would resolve an important ambiguity,
+
+ask for that evidence before packaging.
+
+Otherwise record the uncertainty for the orientation stage.
+
+--------------------------------------------------
+
+PHASE 9 — BUILD THE CONTEXT PACKAGE
+
+--------------------------------------------------
+
+Once you have inspected the tree and have enough evidence to select useful
+
+context, give me ONE copy-and-paste terminal command, or one compact
+
+copy-and-paste command block if the shell requires it, that creates a ZIP
+
+containing the selected project context.
+
+Generate the command yourself from the project structure you discovered.
+
+The package should contain, where relevant:
+
+- the project tree;
+
+- important root configuration;
+
+- selected live source;
+
+- relevant documentation and narrative;
+
+- representative examples;
+
+- safe current-state information;
+
+- anything else you judge necessary for rapid project awareness.
+
+Preserve relative paths where practical so project structure remains legible.
+
+Name the archive something obvious, for example:
+
+project-ai-context.zip
+
+Do not modify the actual project files while creating the package.
+
+Temporary packaging files may be created if necessary, but keep the process
+
+simple and tell me what was created.
+
+After giving me the command, tell me only:
+
+1\. what the command will create;
+
+2\. the ZIP filename to upload;
+
+3\. whether any temporary folder can be deleted afterward.
+
+Then WAIT for me to upload the ZIP.
+
+--------------------------------------------------
+
+PHASE 10 — ORIENT FROM THE PACKAGE
+
+--------------------------------------------------
+
+When I upload the ZIP, READ IT before proposing work.
+
+Reconstruct the project from the supplied evidence.
+
+Produce a concise PROJECT AWARENESS REPORT containing:
+
+CURRENT PURPOSE
+
+What the project appears to be trying to achieve now.
+
+CURRENT STATE
+
+What is actually implemented or present now.
+
+ARCHITECTURE
+
+The important structure and execution/content flow.
+
+WORKING CONVENTIONS
+
+Naming, folders, syntax, schemas, authoring patterns or other conventions I
+
+need to preserve.
+
+LIVE VS HISTORICAL
+
+Anything that appears to be old, duplicated, experimental, backup material or
+
+documentation of previous states.
+
+CURRENT CHANGES
+
+Relevant uncommitted or recently changed work if that information is present.
+
+DOCUMENTED DIRECTION
+
+Important intended next steps or principles, clearly distinguished from
+
+implemented reality.
+
+UNCERTAINTIES
+
+Anything you cannot establish confidently from the evidence.
+
+HIGH-VALUE FILES
+
+A short list of the files you consider most important to understanding future
+
+changes.
+
+Do not produce a large generic code review.
+
+Do not suggest a redesign.
+
+Do not generate a roadmap unless the project documentation explicitly makes
+
+one necessary to understanding current state.
+
+The goal is for me to be able to look at your report and say:
+
+"Yes. You understand the project we actually have."
+
+--------------------------------------------------
+
+PHASE 11 — VERIFY YOUR AWARENESS
+
+--------------------------------------------------
+
+Treat my correction of your awareness report as authoritative evidence about
+
+the current working state.
+
+If I correct something:
+
+- update your model of the project;
+
+- do not defend an inference that contradicted my direct observation;
+
+- distinguish the corrected fact from older documentation;
+
+- carry the corrected state forward.
+
+If an important claim can be cheaply checked from a file, terminal command,
+
+browser result or screenshot, prefer verification over extended discussion.
+
+Once I confirm that your project awareness is good enough, STOP awareness mode.
+
+Only then should we choose a small implementation objective.
+
+--------------------------------------------------
+
+OPERATING PRINCIPLES
+
+--------------------------------------------------
+
+Throughout this process:
+
+Optimize for accurate shared state, not engagement.
+
+Do not overwhelm me with branches we may never take.
+
+Do not pursue interesting rabbit holes unless they are necessary to establish
+
+the current project state.
+
+Prefer evidence over inference.
+
+Prefer a real example over an imagined one.
+
+Prefer efficient context over indiscriminate bulk upload.
+
+Be generous with inexpensive, high-information text—especially project
+
+Markdown—and conservative with high-volume binary material.
+
+Preserve narrative and reasoning when they explain why the project exists or
+
+why it works the way it does.
+
+Distinguish current reality from historical documentation and future intent.
+
+Expose uncertainty rather than hiding it behind confident prose.
+
+Do not change the project while learning the project.
+
+Do not assume success without verification.
+
+Make me do as little manual context curation as reasonably possible.
+
+You should do the reasoning about what context you need.
+
+I should mainly have to:
+
+run a command;
+
+return the result;
+
+upload the package;
+
+correct anything you misunderstood.
+
+START NOW WITH PHASE 1 ONLY.
+```
+
+## Working file exchange
+
+Once project awareness is established, do not keep sending broad context
+for ordinary implementation changes.
+
+Use a narrow replacement loop:
+
+``` text
+AI identifies exact files needed
+      ↓
+human ZIPs only those files
+      ↓
+AI reads the current files
+      ↓
+AI returns complete replacement files
+      ↓
+human overwrites originals
+      ↓
+run / inspect / verify
+      ↓
+return evidence if correction is needed
+```
+
+The AI should ask for the smallest practical set of current files needed
+for the change.
+
+The human should not have to paste large files into chat or reconstruct
+their contents manually.
+
+When practical, the AI should provide one short copy-and-paste command
+that creates a ZIP containing exactly those files.
+
+After inspecting the ZIP, prefer returning complete replacement files
+when that is safer and easier than asking the human to edit fragments in
+place.
+
+Always state the destination path for each replacement file.
+
+This method is deliberately different from the project-awareness
+package:
+
+``` text
+awareness package = reconstruct the project
+working file ZIP  = make one bounded change
+```
+
+The first is broad enough for orientation.
+
+The second should be narrow enough that the change remains easy to
+understand, overwrite, test and reverse.
+
+The loop is:
+
+**select → transfer → replace → verify**
+
+It keeps the human at the control point without making the human the
+transport layer for code.
+
+## Operational prompts
+
+The main **Project Awareness Prompt above remains the primary bootstrap**.
+
+Do not split its discovery and packaging phases apart. It deliberately combines:
+
+```text
+1. discover the project tree
+      +
+2. select and build the awareness package
+      ↓
+reconstruct project awareness
+```
+
+That combined prompt is for entering a project or deliberately rebuilding awareness.
+
+The smaller prompts below are for repeating one part of the process without rerunning the whole bootstrap.
+
+### 1. Refresh the project tree
+
+Use this when the project structure has changed enough that the existing tree may no longer be a reliable map.
+
+Copy this prompt into the AI:
+
+```text
+PROJECT TREE REFRESH
+
+I need a fresh lightweight map of the project currently open in my VS Code terminal.
+
+Do not ask me to describe the structure manually.
+
+Give me one copy-and-paste PowerShell command that creates:
+
+gpt-tree.txt
+
+The tree should make the project legible for AI orientation.
+
+Include useful relative paths and file sizes.
+
+Include source, content, configuration and documentation.
+
+Exclude generated dependency/build/cache material such as:
+
+node_modules
+.git
+dist
+.astro
+
+Do not read or modify project files.
+
+Do not create a ZIP.
+
+After giving me the command, tell me only to run it and return gpt-tree.txt.
+
+WAIT for the tree before drawing conclusions about the project.
+```
+
+The tree answers:
+
+**What is here?**
+
+It is a map, not the project itself.
+
+### 2. Refresh the awareness package
+
+Use this when the AI already has a current `gpt-tree.txt` but needs fresh project evidence.
+
+This is a shortcut, not a replacement for the full Project Awareness Prompt.
+
+Copy this prompt into the AI:
+
+```text
+AWARENESS PACKAGE REFRESH
+
+Use the current gpt-tree.txt as the map of the project.
+
+First read the tree.
+
+Then identify the high-value files needed to reconstruct current project awareness.
+
+The package is an ORIENTATION ANCHOR, not a backup.
+
+Bias strongly toward inexpensive descriptive text and current implementation:
+
+Markdown
+text documentation
+Astro / HTML / templates
+CSS
+JavaScript / TypeScript
+JSON and configuration
+project instructions
+README / agent instructions
+status.diff or other safe current-state evidence
+the current project tree
+
+For Markdown, default to including all project-owned `.md` files when that is
+cheap. Narrative, methodology, workflow, plans, accomplishments, TODOs and
+authoring instructions may be as important to reconstruction as executable code.
+
+Include enough current source and configuration to test the narrative against
+the implementation.
+
+Do not indiscriminately include:
+
+binary asset libraries
+node_modules
+.git
+dist
+.astro
+caches
+existing ZIP/archive files
+generated output
+secrets
+
+Use the tree to preserve awareness of excluded assets by filename and location
+when their bytes are not needed.
+
+Preserve relative paths in the package.
+
+Before asking me for any file, check whether the current context already contains
+a sufficiently current copy. Request a fresh file only when the existing copy is
+missing or may have changed.
+
+Then give me ONE copy-and-paste PowerShell command that creates:
+
+gpt-context-current.zip
+
+For this project, prefer a temporary staging folder containing the selected files,
+then create the ZIP with Windows `tar -a -c` rather than relying on
+`Compress-Archive`.
+
+The command must:
+
+- not modify the actual project files;
+- remove any old staging folder before starting;
+- remove any old `gpt-context-current.zip` before creating the new one;
+- preserve project-relative paths;
+- include the selected narrative and source files;
+- create the archive from the staging folder;
+- verify that the ZIP exists before deleting the staging folder;
+- retain the staging folder and report failure if the ZIP was not created.
+
+Do not delete the staging folder unconditionally after an archive command.
+
+After giving me the command, tell me only:
+
+1. what it will package;
+2. the ZIP filename to upload;
+3. that staging files are removed only after successful ZIP creation.
+
+Then WAIT for the ZIP.
+
+When I upload it, inspect the actual package before proposing project changes.
+
+Reconstruct, and distinguish where possible:
+
+current implementation
+current Git / working state
+project purpose
+narrative and history
+authoring conventions
+methodology and workflow
+accomplishments
+current TODOs
+documented direction
+uncertainties or stale documentation
+
+Prefer evidence over inference.
+
+If documentation and implementation disagree, report the disagreement rather
+than silently choosing whichever version sounds newer.
+```
+
+The awareness package answers:
+
+**What can I inspect to reconstruct where I am?**
+
+The tree and awareness package work together:
+
+```text
+gpt-tree.txt
+      ↓
+select useful evidence
+      ↓
+gpt-context-current.zip
+      ↓
+reconstruct awareness
+```
+
+### 3. Exchange working files for one bounded change
+
+Use this after awareness is established and we are making a specific change.
+
+Copy this prompt into the AI:
+
+```text
+WORKING FILE EXCHANGE
+
+We are making one bounded project change.
+
+Do not ask me for a broad project dump.
+
+First check the project context you already have.
+
+Identify the smallest practical set of CURRENT files you need to inspect before
+making this change.
+
+If you already have a current enough copy of a required file, do not ask me for
+it again.
+
+For files you genuinely need refreshed, give me one short copy-and-paste
+PowerShell command that ZIPs exactly those files.
+
+Use -LiteralPath where PowerShell wildcard characters in filenames could cause
+problems.
+
+Then WAIT for the ZIP.
+
+Read the actual current files before editing.
+
+When practical, return COMPLETE replacement files rather than fragments.
+
+Preserve each original filename exactly.
+
+For every replacement, state its exact destination path.
+
+I will overwrite the originals, run the project and return browser, screenshot
+or terminal evidence.
+
+Do not assume the change worked until it has been verified.
+```
+
+This is not an awareness package.
+
+```text
+awareness package = reconstruct the project
+working file ZIP  = make one bounded change
+```
+
+The working loop is:
+
+**select → transfer → replace → verify**
+
+### 4. Start the live delta tracker
+
+Use this when active work has begun and you want an inexpensive record of the uncommitted delta between durable Git checkpoints.
+
+Copy this prompt into the AI:
+
+```text
+DELTA TRACKER
+
+I want a lightweight fragility buffer for the project currently open in my
+VS Code PowerShell terminal.
+
+Give me one copy-and-paste PowerShell command that continuously refreshes:
+
+status.diff
+
+from the current Git working tree every 30 seconds.
+
+The file should capture the current uncommitted Git diff so that another AI can
+inspect what changed since the relevant committed state.
+
+Do not commit anything.
+Do not modify source files.
+Do not add status.diff to Git automatically.
+Do not create a second history system.
+
+Tell me how to stop the watcher.
+
+Keep the explanation short.
+```
+
+`status.diff` is not a durable checkpoint and it is not project memory.
+
+It is a **fragility buffer** between checkpoints:
+
+```text
+known-good Git state
+      ↓
+active work
+      ↓
+status.diff
+      ↓
+inspect / verify / correct
+      ↓
+next known-good Git state
+```
+
+Git remains the authority for committed history.
+
+The delta simply makes current uncommitted change easier to recover and inspect.
+
+## The four awareness tools
+
+```text
+FULL PROJECT AWARENESS PROMPT
+tree + package selection + orientation
+→ enter or deliberately re-enter the project
+
+gpt-tree.txt
+→ what is here
+
+gpt-context-current.zip
+→ what can be read to reconstruct awareness
+
+working-file ZIP
+→ what exact current files are needed for this change
+
+status.diff
+→ what changed since the relevant Git state
+```
+
+These tools should reduce human transport work, not create more of it.
+
+The AI should always use the cheapest trustworthy anchor already available before asking the human to reproduce information.
+
+## What this prompt is for
+
+This is a **bootstrap prompt**.
+
+It does not describe a particular project. It describes how the AI
+should learn a project.
+
+That distinction matters because the project may be:
+
+``` text
+
+10 minutes old
+
+6 months old
+
+working
+
+broken
+
+well documented
+
+barely documented
+
+Astro
+
+something else entirely
+```
+
+The AI's first task is to establish reality.
+
+Only after that should it help change reality.
+
+## Context package roles
+
+The awareness artifacts have different jobs:
+
+``` text
+gpt-tree.txt    = where the meaningful material is
+gpt-context-current.zip = textual evidence the AI can inspect
+status.diff     = what changed from the relevant Git state
+Git             = recoverable committed checkpoints
+human check     = whether reconstructed understanding is correct
+```
+
+The context package is not a backup. It is an orientation package.
+
+A backup preserves state.
+
+The awareness package preserves enough orientation to recover the work without
+trying to preserve every interaction that produced it.
+
+Text comes first because it is inexpensive to store, inspect, search,
+compare, diff and transfer while carrying code, documentation,
+decisions, history, intent and uncertainty.
+
+Binary assets should be transferred when seeing their actual contents
+materially improves awareness. Otherwise their filenames and
+relationships can remain visible through the tree.
+
+## Refreshing awareness
+
+The same prompt can be used later when the project has moved
+significantly beyond the AI's reliable context.
+
+You do not need to reconstruct the whole journey.
+
+Return to the evidence:
+
+``` text
+
+current project
+
+      ↓
+
+discover structure
+
+      ↓
+
+select high-value context
+
+      ↓
+
+package
+
+      ↓
+
+orient
+
+      ↓
+
+verify understanding
+
+      ↓
+
+continue
+```
+
+The package is a snapshot.
+
+The diff is a delta.
+
+Git provides recoverable checkpoints.
+
+The project remains the source of truth.

@@ -1,0 +1,36 @@
+---
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const entry = await getEntry('Perm', 'about');
+
+if (!entry) {
+	throw new Error('Missing permanent content entry: src/content/Perm/about.md');
+}
+
+const { Content } = await render(entry);
+---
+
+<BaseLayout
+	title={`${entry.data.title} | StdPort`}
+	description={entry.data.description}
+>
+	<main class="wrapper permanent-page">
+		<Content />
+	</main>
+</BaseLayout>
+
+<style>
+	.permanent-page {
+		padding-block: 2rem 5rem;
+	}
+
+	.permanent-page :global(h1) {
+		margin-bottom: 1rem;
+	}
+
+	.permanent-page :global(p) {
+		max-width: 58rem;
+		color: var(--gray-200);
+	}
+</style>

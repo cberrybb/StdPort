@@ -166,17 +166,47 @@ Location:
 
 `src/pages/work/[...slug].astro`
 
-Near the top is **PROJECT TEXT FORMATTING**. The three settings are independent:
+Near the top is **PROJECT TEXT FORMATTING**. There are three separate setting groups:
+
+- `projectTextAnchor` — where the whole text block sits: left, centre, or right.
+- `projectTextWidth` — how wide the text block is, as a percentage of the available content width.
+- `projectTextAlign` — how the text is aligned **inside** that block: left, centre, right, or justify.
+
+For each group, **uncomment exactly one setting and leave the other choices commented out**. For example:
 
 ```ts
-projectTextAnchor = 'left';     // left | center | right
-projectTextWidth = 70;          // 100 | 90 | 80 | 70 | 60 | 50
-projectTextAlign = 'justify';   // left | center | right | justify
+type ProjectTextAnchor = 'left' | 'center' | 'right';
+type ProjectTextAlign = 'left' | 'center' | 'right' | 'justify';
+type ProjectTextWidth = 100 | 90 | 80 | 70 | 60 | 50;
+
+let projectTextAnchor: ProjectTextAnchor | undefined;
+
+// projectTextAnchor = 'left';
+projectTextAnchor = 'center';
+// projectTextAnchor = 'right';
+
+let projectTextWidth: ProjectTextWidth | undefined;
+
+// projectTextWidth = 100;
+// projectTextWidth = 90;
+projectTextWidth = 80;
+// projectTextWidth = 70;
+// projectTextWidth = 60;
+// projectTextWidth = 50;
+
+let projectTextAlign: ProjectTextAlign | undefined;
+
+// projectTextAlign = 'left';
+// projectTextAlign = 'center';
+// projectTextAlign = 'right';
+projectTextAlign = 'justify';
 ```
 
-Leave a setting commented out to show its on-page setup pills. Uncomment one value to lock that setting and hide that pill group.
+The example above means: **centre the text block, make it 80% wide, and justify the text inside it**.
 
-Use this for the normal body treatment of every project. Use `[text:...]` only for local exceptions between galleries or other content.
+If every option in one group stays commented out, that setting is left unlocked and its on-page setup pills remain visible. Uncommenting one option locks that setting and hides that pill group.
+
+Use these three project-wide controls for the normal body treatment of every project. Use `[text:...]` only for local exceptions between galleries or other content.
 
 ## 7. Homepage layout — `index.astro`
 
